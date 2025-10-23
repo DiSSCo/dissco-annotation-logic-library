@@ -1,7 +1,6 @@
-package eu.dissco.annotationlogic.service;
+package eu.dissco.annotationlogic.validator;
 
 import eu.dissco.annotationlogic.exception.InvalidAnnotationException;
-import eu.dissco.annotationlogic.exception.InvalidTargetException;
 import eu.dissco.core.annotationlogic.schema.Annotation;
 import eu.dissco.core.annotationlogic.schema.DigitalMedia;
 import eu.dissco.core.annotationlogic.schema.DigitalSpecimen;
@@ -16,27 +15,19 @@ public interface AnnotationValidator {
    *
    * @param digitalSpecimen digital specimen object being annotated
    * @param annotation      annotation to check
-   * @return True if the object's type is valid for the annotation, false otherwise.
-   * @throws InvalidAnnotationException if annotation can not be applied to a target (e.g. incorrect
-   *                                    motivation)
-   * @throws InvalidTargetException     if target can not be parsed
+   * @return True if the annotation results in a valid target, false otherwise
    */
   boolean annotationIsValid(@Nonnull DigitalSpecimen digitalSpecimen,
-      @Nonnull Annotation annotation) throws InvalidAnnotationException, InvalidTargetException;
+      @Nonnull Annotation annotation);
 
   /**
    * Checks if an annotation is valid and if it would produce a valid media.
    *
    * @param digitalMedia digital media object being annotated
    * @param annotation   annotation to check
-   * @return True if the object's type is valid for the annotation, false otherwise.
-   * @throws InvalidAnnotationException if annotation can not be applied to a target (e.g.
-   *                                    motivation is not adding, editing, or deleting; or selector
-   *                                    is ROI selector)
-   * @throws InvalidTargetException     if target can not be parsed
+   * @return True if the annotation results in a valid target, false otherwise.
    */
-  boolean annotationIsValid(@Nonnull DigitalMedia digitalMedia, @Nonnull Annotation annotation)
-      throws InvalidAnnotationException, InvalidTargetException;
+  boolean annotationIsValid(@Nonnull DigitalMedia digitalMedia, @Nonnull Annotation annotation);
 
   /**
    * Applies single annotation to a target digital specimen

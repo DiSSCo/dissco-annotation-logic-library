@@ -1,7 +1,7 @@
 package eu.dissco.annotationlogic.config;
 
 
-import static eu.dissco.annotationlogic.config.ApplicationConfig.FORMATTER;
+import static eu.dissco.annotationlogic.config.ApplicationConfiguration.FORMATTER;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;

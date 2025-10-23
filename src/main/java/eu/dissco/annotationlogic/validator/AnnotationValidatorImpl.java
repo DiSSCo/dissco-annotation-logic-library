@@ -1,4 +1,4 @@
-package eu.dissco.annotationlogic.service;
+package eu.dissco.annotationlogic.validator;
 
 import static com.jayway.jsonpath.JsonPath.using;
 import static eu.dissco.annotationlogic.utils.ValidationUtils.CLASS_MAP;
@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
 import eu.dissco.annotationlogic.domain.SelectorType;
+import eu.dissco.annotationlogic.exception.InvalidAnnotationBodyException;
 import eu.dissco.annotationlogic.exception.InvalidAnnotationException;
 import eu.dissco.annotationlogic.exception.InvalidAnnotationMotivationException;
 import eu.dissco.annotationlogic.exception.InvalidTargetException;
@@ -18,6 +19,8 @@ import eu.dissco.core.annotationlogic.schema.DigitalMedia;
 import eu.dissco.core.annotationlogic.schema.DigitalSpecimen;
 import jakarta.annotation.Nonnull;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,34 +29,36 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
 
   private final ObjectMapper mapper;
   private final Configuration jsonPathConfig;
-  private static final Pattern LAST_KEY_PATTERN = Pattern.compile("\\[(?!.*\\[')(.*)");
-  private static final Pattern NUMERIC_PATTERN = Pattern.compile("\\d+");
+  private final JsonSchemaValidator jsonSchemaValidator;
+  private static final String LAST_INDEX_PATTERN = "\\[(?!.*\\[)(\\d+)]";
+  private static final Pattern LAST_KEY_PATTERN = Pattern.compile("\\[(?!.*\\[')(.*)']");
   private static final Logger LOGGER = LoggerFactory.getLogger(AnnotationValidatorImpl.class);
 
-  public AnnotationValidatorImpl(ObjectMapper mapper, Configuration jsonPathConfig) {
+  public AnnotationValidatorImpl(ObjectMapper mapper, Configuration jsonPathConfig, JsonSchemaValidator jsonSchemaValidator) {
     this.mapper = mapper;
     this.jsonPathConfig = jsonPathConfig;
+    this.jsonSchemaValidator = jsonSchemaValidator;
   }
 
 
   @Override
   public boolean annotationIsValid(@Nonnull DigitalSpecimen digitalSpecimen,
-      @Nonnull Annotation annotation)
-      throws InvalidAnnotationException, InvalidTargetException {
-    var context = using(jsonPathConfig).parse(getTargetAsString(digitalSpecimen));
-    var pathIsValid = pathIsValid(context, annotation);
-    var doesNotContainForbiddenFields = doesNotAnnotateForbiddenFields(annotation);
-    var hasCorrectValueCount = annotationHasCorrectValueCount(annotation);
-    applyTermAnnotation(context, annotation);
-    return pathIsValid && doesNotContainForbiddenFields && hasCorrectValueCount;
+      @Nonnull Annotation annotation) {
+    try {
+      var context = using(jsonPathConfig).parse(getTargetAsString(digitalSpecimen));
+      var initialPass = preapplicationChecks(context, annotation);
+      var annotatedTarget = applyAnnotationToContext(context, annotation);
+      var annotatedTargetIsValid = jsonSchemaValidator.specimenIsValid(annotatedTarget);
+      return initialPass && annotatedTargetIsValid;
+    } catch (InvalidAnnotationException | InvalidTargetException e) {
+      return false;
+    }
   }
 
   @Override
   public boolean annotationIsValid(@Nonnull DigitalMedia digitalMedia,
-      @Nonnull Annotation annotation)
-      throws InvalidAnnotationException, InvalidTargetException {
-    var context = using(jsonPathConfig).parse(getTargetAsString(digitalMedia));
-    return pathIsValid(context, annotation);
+      @Nonnull Annotation annotation) {
+    return false;
   }
 
   @Override
@@ -83,17 +88,22 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
     return null;
   }
 
+  private boolean preapplicationChecks(DocumentContext context, Annotation annotation)
+      throws InvalidAnnotationException {
+    var identifier = (String) context.read("$['dcterms:identifier']");
+    var annotationTargetsObject = annotationTargetsObject(annotation, identifier);
+    var pathIsValid = pathIsValid(context, annotation);
+    var doesNotContainForbiddenFields = doesNotAnnotateForbiddenFields(annotation);
+    var hasCorrectValueCount = annotationHasCorrectValueCount(annotation);
+    return annotationTargetsObject && pathIsValid && doesNotContainForbiddenFields
+        && hasCorrectValueCount;
+
+  }
+
+
   private String getTargetAsString(DigitalSpecimen digitalSpecimen) throws InvalidTargetException {
     try {
       return mapper.writeValueAsString(digitalSpecimen);
-    } catch (JsonProcessingException e) {
-      throw new InvalidTargetException(e.getMessage());
-    }
-  }
-
-  private String getTargetAsString(DigitalMedia digitalMedia) throws InvalidTargetException {
-    try {
-      return mapper.writeValueAsString(digitalMedia);
     } catch (JsonProcessingException e) {
       throw new InvalidTargetException(e.getMessage());
     }
@@ -107,6 +117,10 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
     } else {
       return !ValidationUtils.FORBIDDEN_FIELDS.contains(lastKey);
     }
+  }
+
+  private boolean annotationTargetsObject(Annotation annotation, String targetId) {
+    return Objects.equals(targetId, annotation.getOaHasTarget().getDctermsIdentifier());
   }
 
   private boolean pathIsValid(DocumentContext context, Annotation annotation)
@@ -161,17 +175,21 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
   private static String getLastKey(String jsonPath) {
     var lastKeyMatcher = LAST_KEY_PATTERN.matcher(jsonPath);
     lastKeyMatcher.find();
-    return lastKeyMatcher.group(1).replace("[", "").replace("]", "");
+    return lastKeyMatcher.group(1)
+        .replace("[", "")
+        .replace("]", "")
+        .replace("'", "");
   }
 
 
-  private String applyAnnotation(DocumentContext context, Annotation annotation) {
+  private String applyAnnotationToContext(DocumentContext context, Annotation annotation)
+      throws InvalidAnnotationException {
     var selectorType = getSelector(annotation);
-
     if (SelectorType.TERM_SELECTOR.equals(selectorType)) {
       return applyTermAnnotation(context, annotation);
+    } else {
+      return applyClassAnnotation(context, annotation);
     }
-    return null; // todo
   }
 
   private String applyTermAnnotation(DocumentContext context, Annotation annotation) {
@@ -193,46 +211,40 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
       context.delete(path);
     } else {
       var targetClass = getLastKey(path);
-      if (NUMERIC_PATTERN.matcher(targetClass).matches()) {
-        targetClass = getLastKey(getParentPath(targetClass)); // ignore the index for now
-      }
       var clazz = CLASS_MAP.get(targetClass);
       if (clazz == null) {
-        throw new InvalidAnnotationException("Unable to read selector path: " + path);
+        LOGGER.warn("Unrecognized class: {}", targetClass);
+        throw new InvalidAnnotationException("Unrecognized class: " + path);
       }
+      Map<String, Object> newObjectHashMap;
       try {
-        // Does the value we've been given map to the class we're interested in?
+        // Checks if the value of the annotation correctly maps to its intended class
         var newObject = mapper.readValue(annotation.getOaHasBody().getOaValue().getFirst(), clazz);
+        newObjectHashMap = mapper.convertValue(newObject, Map.class);
       } catch (JsonProcessingException e) {
-        LOGGER.error("Unable to read value {} as target class {}", annotation.getOaHasBody().getOaValue().getFirst(), targetClass, e);
-        throw new  InvalidAnnotationException("Unable to read value " + annotation.getOaHasBody().getOaValue().getFirst() + " as class " + targetClass);
+        LOGGER.error("Unable to read value {} as target class {}",
+            annotation.getOaHasBody().getOaValue().getFirst(), targetClass, e);
+        throw new InvalidAnnotationBodyException(
+            "Unable to read value " + annotation.getOaHasBody().getOaValue().getFirst()
+                + " as class " + targetClass);
       }
-
-      /*
-      todo
-      1. check if it's an array path (if adding, just append)
-      2. Set desired value at the path
-       */
+      if (OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())) {
+        applyClassAnnotationAdd(context, path, newObjectHashMap);
+      } else if (OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())) {
+        context.set(path, newObjectHashMap);
+      }
     }
-
     return context.toString();
   }
 
-
-  private boolean isArrayAnnotation(Annotation annotation) {
-    var targetPath = getTargetPath(annotation);
-    var lastKey = getLastKey(targetPath);
-    return NUMERIC_PATTERN.matcher(lastKey).matches();
+  private void applyClassAnnotationAdd(DocumentContext context, String path,
+      Map<String, Object> newClassValue) {
+    var arrPath = path.replaceAll(LAST_INDEX_PATTERN, ""); // remove trailing index for adding
+    var parentPath = getParentPath(arrPath);
+    var arr = context.read(arrPath);
+    var arrayContext = using(jsonPathConfig).parse(arr);
+    arrayContext.add("$", newClassValue);
+    context.set(parentPath, arrayContext);
   }
-
-  /*
-  Considerations
-  * if we're annotating an array of primitives, we don't append items to the array; the annotation
-    should be an oa:editing annotation with the desired final state of the list.
-  * We need to check if it's a root annotation before applying.
-
-
-   */
-
 
 }

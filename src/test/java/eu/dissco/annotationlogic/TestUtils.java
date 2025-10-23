@@ -20,9 +20,11 @@ import eu.dissco.core.annotationlogic.schema.DigitalSpecimen.OdsPhysicalSpecimen
 import eu.dissco.core.annotationlogic.schema.DigitalSpecimen.OdsTopicDiscipline;
 import eu.dissco.core.annotationlogic.schema.EntityRelationship;
 import eu.dissco.core.annotationlogic.schema.Event;
+import eu.dissco.core.annotationlogic.schema.Identification;
 import eu.dissco.core.annotationlogic.schema.Location;
 import eu.dissco.core.annotationlogic.schema.OaHasSelector;
 import eu.dissco.core.annotationlogic.schema.OdsHasRole;
+import eu.dissco.core.annotationlogic.schema.TaxonIdentification;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -64,6 +66,15 @@ public class TestUtils {
         .withOdsSourceSystemName("A Source System")
         .withOdsLivingOrPreserved(OdsLivingOrPreserved.PRESERVED)
         .withDctermsModified("2022-11-01T09:59:24.000Z")
+        .withOdsHasIdentifications(
+            List.of(new Identification()
+                .withType("holotype")
+                .withOdsHasTaxonIdentifications(List.of(
+                    new TaxonIdentification()
+                        .withDwcScientificName("Bombus bombus")
+                ))
+            )
+        )
         .withOdsHasEntityRelationships(
             List.of(
                 new EntityRelationship()
@@ -91,7 +102,9 @@ public class TestUtils {
         ));
   }
 
-  public static Annotation givenAnnotationTerm(OaMotivation motivation){
+  public static Annotation givenAnnotation(OaMotivation motivation, boolean isTermAnnotation){
+    var target = isTermAnnotation ? givenOaTargetTerm(motivation) : givenOaTargetClass(motivation);
+    var body = isTermAnnotation ? givenOaBodyTerm() : givenOaBodyClass();
     return new Annotation()
         .withId(HANDLE_ID)
         .withDctermsIdentifier(HANDLE_ID)
@@ -99,9 +112,9 @@ public class TestUtils {
         .withOdsFdoType(FDO_TYPE)
         .withOdsVersion(1)
         .withOdsStatus(OdsStatus.ACTIVE)
-        .withOaHasBody(givenOaBodyTerm())
+        .withOaHasBody(body)
         .withOaMotivation(motivation)
-        .withOaHasTarget(givenOaTargetTerm(motivation))
+        .withOaHasTarget(target)
         .withDctermsCreator(givenAgent(Type.PROV_PERSON))
         .withDctermsCreated(Date.from(CREATED))
         .withDctermsIssued(Date.from(CREATED))
@@ -113,6 +126,20 @@ public class TestUtils {
     return new AnnotationBody()
         .withType("oa:TextualBody")
         .withOaValue(new ArrayList<>(List.of("Some new value!")))
+        .withDctermsReferences(
+            "https://medialib.naturalis.nl/file/id/ZMA.UROCH.P.1555/format/large")
+        .withOdsScore(0.99);
+  }
+
+  private static AnnotationBody givenOaBodyClass(){
+    return new AnnotationBody()
+        .withType("oa:TextualBody")
+        .withOaValue(new ArrayList<>(List.of("""
+            {
+              "dwc:genus": "some genus",
+              "dwc:phylum": "some phylum"
+            }
+            """)))
         .withDctermsReferences(
             "https://medialib.naturalis.nl/file/id/ZMA.UROCH.P.1555/format/large")
         .withOdsScore(0.99);
@@ -131,6 +158,22 @@ public class TestUtils {
             new OaHasSelector()
                 .withAdditionalProperty("ods:term", path)
                 .withAdditionalProperty("@type", "ods:TermSelector")
+        );
+  }
+
+  private static AnnotationTarget givenOaTargetClass(OaMotivation motivation) {
+    var path = OaMotivation.OA_EDITING.equals(motivation) ?
+        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][0]" :
+        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][1]" ;
+    return new AnnotationTarget()
+        .withId(SPECIMEN_ID)
+        .withType("ods:DigitalSpecimen")
+        .withOdsFdoType(FDO_TYPE)
+        .withDctermsIdentifier(SPECIMEN_ID)
+        .withOaHasSelector(
+            new OaHasSelector()
+                .withAdditionalProperty("ods:class", path)
+                .withAdditionalProperty("@type", "ods:ClassSelector")
         );
   }
 
