@@ -30,11 +30,12 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
   private final ObjectMapper mapper;
   private final Configuration jsonPathConfig;
   private final JsonSchemaValidator jsonSchemaValidator;
-  private static final String LAST_INDEX_PATTERN = "\\[(?!.*\\[)(\\d+)]";
+  private static final Pattern LAST_INDEX_PATTERN = Pattern.compile("\\[(?!.*\\[)(\\d+)]");
   private static final Pattern LAST_KEY_PATTERN = Pattern.compile("\\[(?!.*\\[')(.*)']");
   private static final Logger LOGGER = LoggerFactory.getLogger(AnnotationValidatorImpl.class);
 
-  public AnnotationValidatorImpl(ObjectMapper mapper, Configuration jsonPathConfig, JsonSchemaValidator jsonSchemaValidator) {
+  public AnnotationValidatorImpl(ObjectMapper mapper, Configuration jsonPathConfig,
+      JsonSchemaValidator jsonSchemaValidator) {
     this.mapper = mapper;
     this.jsonPathConfig = jsonPathConfig;
     this.jsonSchemaValidator = jsonSchemaValidator;
@@ -47,9 +48,11 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
     try {
       var context = using(jsonPathConfig).parse(getTargetAsString(digitalSpecimen));
       var initialPass = preapplicationChecks(context, annotation);
-      var annotatedTarget = applyAnnotationToContext(context, annotation);
-      var annotatedTargetIsValid = jsonSchemaValidator.specimenIsValid(annotatedTarget);
-      return initialPass && annotatedTargetIsValid;
+      if (initialPass) {
+        var annotatedTarget = applyAnnotationToContext(context, annotation);
+        return jsonSchemaValidator.specimenIsValid(annotatedTarget);
+      }
+      return false;
     } catch (InvalidAnnotationException | InvalidTargetException e) {
       return false;
     }
@@ -64,8 +67,16 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
   @Override
   public DigitalSpecimen applyAnnotation(@Nonnull DigitalSpecimen digitalSpecimen,
       @Nonnull Annotation annotation)
-      throws InvalidAnnotationException {
-    return null;
+      throws InvalidAnnotationException, InvalidTargetException {
+    var context = using(jsonPathConfig).parse(getTargetAsString(digitalSpecimen));
+    var initialPass = preapplicationChecks(context, annotation);
+    if (initialPass) {
+      var annotatedTarget = applyAnnotationToContext(context, annotation);
+      if (jsonSchemaValidator.specimenIsValid(annotatedTarget)){
+        return mapper.convertValue(annotatedTarget, DigitalSpecimen.class);
+      }
+    }
+    throw new InvalidAnnotationException("Annotation is not valid");
   }
 
   @Override
@@ -91,13 +102,11 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
   private boolean preapplicationChecks(DocumentContext context, Annotation annotation)
       throws InvalidAnnotationException {
     var identifier = (String) context.read("$['dcterms:identifier']");
-    var annotationTargetsObject = annotationTargetsObject(annotation, identifier);
-    var pathIsValid = pathIsValid(context, annotation);
-    var doesNotContainForbiddenFields = doesNotAnnotateForbiddenFields(annotation);
-    var hasCorrectValueCount = annotationHasCorrectValueCount(annotation);
-    return annotationTargetsObject && pathIsValid && doesNotContainForbiddenFields
-        && hasCorrectValueCount;
-
+    return
+        annotationTargetsObject(annotation, identifier)
+            && pathIsValid(context, annotation)
+            && doesNotAnnotateForbiddenFields(annotation)
+            && annotationHasCorrectValueCount(annotation);
   }
 
 
@@ -169,7 +178,9 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
   }
 
   private static String getParentPath(String path) {
-    return path.replaceAll(LAST_KEY_PATTERN.pattern(), "");
+    return path
+        .replaceAll(LAST_INDEX_PATTERN.pattern(), "")
+        .replaceAll(LAST_KEY_PATTERN.pattern(), "");
   }
 
   private static String getLastKey(String jsonPath) {
@@ -239,12 +250,19 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
 
   private void applyClassAnnotationAdd(DocumentContext context, String path,
       Map<String, Object> newClassValue) {
-    var arrPath = path.replaceAll(LAST_INDEX_PATTERN, ""); // remove trailing index for adding
-    var parentPath = getParentPath(arrPath);
-    var arr = context.read(arrPath);
-    var arrayContext = using(jsonPathConfig).parse(arr);
-    arrayContext.add("$", newClassValue);
-    context.set(parentPath, arrayContext);
+    // If we're appending a class to the end of an array
+    if (LAST_INDEX_PATTERN.matcher(path).find()) {
+      var arrPath = path.replaceAll(LAST_INDEX_PATTERN.pattern(), ""); // remove trailing index
+      var parentPath = getParentPath(arrPath);
+      var arr = context.read(arrPath);
+      var arrayContext = using(jsonPathConfig).parse(arr);
+      context.set(parentPath, arrayContext);
+      arrayContext.add("$", newClassValue);
+    } else {
+      var parentPath = getParentPath(path);
+      context.set(parentPath, newClassValue);
+    }
   }
+
 
 }

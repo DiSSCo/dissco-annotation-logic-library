@@ -56,6 +56,7 @@ public class TestUtils {
 
   public static DigitalSpecimen givenDigitalSpecimen(){
     return new DigitalSpecimen()
+        .withDctermsIdentifier(SPECIMEN_ID)
         .withOdsOrganisationID("https://ror.org/039zvsn29")
         .withOdsOrganisationName("National Museum of Natural History")
         .withOdsPhysicalSpecimenIDType(OdsPhysicalSpecimenIDType.RESOLVABLE)
@@ -100,6 +101,10 @@ public class TestUtils {
                 .withOdsHasLocation(new Location()
                     .withDwcCountry("England"))
         ));
+  }
+
+  public static Annotation givenAnnotation(){
+    return givenAnnotation(OaMotivation.OA_EDITING, true);
   }
 
   public static Annotation givenAnnotation(OaMotivation motivation, boolean isTermAnnotation){
@@ -149,6 +154,10 @@ public class TestUtils {
     var path = OaMotivation.OA_EDITING.equals(motivation) ?
         "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:country']" :
         "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:locality']";
+    return givenAnnotationTarget(path);
+  }
+
+  public static AnnotationTarget givenAnnotationTarget(String path){
     return new AnnotationTarget()
         .withId(SPECIMEN_ID)
         .withType("ods:DigitalSpecimen")

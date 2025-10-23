@@ -1,6 +1,7 @@
 package eu.dissco.annotationlogic.validator;
 
 import eu.dissco.annotationlogic.exception.InvalidAnnotationException;
+import eu.dissco.annotationlogic.exception.InvalidTargetException;
 import eu.dissco.core.annotationlogic.schema.Annotation;
 import eu.dissco.core.annotationlogic.schema.DigitalMedia;
 import eu.dissco.core.annotationlogic.schema.DigitalSpecimen;
@@ -39,7 +40,7 @@ public interface AnnotationValidator {
    */
   DigitalSpecimen applyAnnotation(@Nonnull DigitalSpecimen digitalSpecimen,
       @Nonnull Annotation annotation)
-      throws InvalidAnnotationException;
+      throws InvalidAnnotationException, InvalidTargetException;
 
   /**
    * Applies single annotation to a target digital media
@@ -61,7 +62,7 @@ public interface AnnotationValidator {
    * @throws InvalidAnnotationException If any annotation is not valid
    */
   DigitalSpecimen applyAnnotations(@Nonnull DigitalSpecimen digitalSpecimen,
-      @Nonnull List<Annotation> annotations) throws InvalidAnnotationException;
+      @Nonnull List<Annotation> annotations) throws InvalidAnnotationException, InvalidTargetException;
 
   /**
    * Applies a list of annotations to a target object Applies annotations from oldest to newest
