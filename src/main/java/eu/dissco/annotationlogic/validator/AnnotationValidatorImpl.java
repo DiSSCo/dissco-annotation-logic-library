@@ -72,8 +72,13 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
     var initialPass = preapplicationChecks(context, annotation);
     if (initialPass) {
       var annotatedTarget = applyAnnotationToContext(context, annotation);
-      if (jsonSchemaValidator.specimenIsValid(annotatedTarget)){
-        return mapper.convertValue(annotatedTarget, DigitalSpecimen.class);
+      if (jsonSchemaValidator.specimenIsValid(annotatedTarget)) {
+        try {
+          return mapper.readValue(annotatedTarget, DigitalSpecimen.class);
+        } catch (JsonProcessingException e) {
+          LOGGER.warn("Unable to parse annotated target", e);
+          throw new InvalidAnnotationException("Unable to parse annotated target");
+        }
       }
     }
     throw new InvalidAnnotationException("Annotation is not valid");
@@ -137,7 +142,7 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
     var path = getTargetPath(annotation);
     if (OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())
         || OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation())) {
-      return (pathExists(context, path));
+      return pathExists(context, path);
     } else if (OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())) {
       var parentPath = getParentPath(path);
       return (!pathExists(context, path) && pathExists(context, parentPath));
@@ -212,7 +217,7 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
       var lastKey = getLastKey(path);
       context.put(parentPath, lastKey, annotation.getOaHasBody().getOaValue().getFirst());
     }
-    return context.toString();
+    return context.jsonString();
   }
 
   private String applyClassAnnotation(DocumentContext context, Annotation annotation)
@@ -245,7 +250,7 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
         context.set(path, newObjectHashMap);
       }
     }
-    return context.toString();
+    return context.jsonString();
   }
 
   private void applyClassAnnotationAdd(DocumentContext context, String path,
@@ -253,14 +258,14 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
     // If we're appending a class to the end of an array
     if (LAST_INDEX_PATTERN.matcher(path).find()) {
       var arrPath = path.replaceAll(LAST_INDEX_PATTERN.pattern(), ""); // remove trailing index
-      var parentPath = getParentPath(arrPath);
       var arr = context.read(arrPath);
       var arrayContext = using(jsonPathConfig).parse(arr);
-      context.set(parentPath, arrayContext);
       arrayContext.add("$", newClassValue);
+      context.set(arrPath, arrayContext.json());
     } else {
+      var newField = getLastKey(path);
       var parentPath = getParentPath(path);
-      context.set(parentPath, newClassValue);
+      context.put(parentPath, newField, newClassValue);
     }
   }
 

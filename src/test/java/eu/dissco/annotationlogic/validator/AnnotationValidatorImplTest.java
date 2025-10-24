@@ -2,10 +2,13 @@ package eu.dissco.annotationlogic.validator;
 
 import static eu.dissco.annotationlogic.TestUtils.MAPPER;
 import static eu.dissco.annotationlogic.TestUtils.MEDIA_ID;
+import static eu.dissco.annotationlogic.TestUtils.NEW_VALUE;
 import static eu.dissco.annotationlogic.TestUtils.SPECIMEN_ID;
 import static eu.dissco.annotationlogic.TestUtils.givenAnnotation;
 import static eu.dissco.annotationlogic.TestUtils.givenAnnotationTarget;
 import static eu.dissco.annotationlogic.TestUtils.givenDigitalSpecimen;
+import static eu.dissco.annotationlogic.TestUtils.givenEvent;
+import static eu.dissco.annotationlogic.TestUtils.givenIdentification;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -15,7 +18,11 @@ import eu.dissco.core.annotationlogic.schema.Annotation;
 import eu.dissco.core.annotationlogic.schema.Annotation.OaMotivation;
 import eu.dissco.core.annotationlogic.schema.AnnotationBody;
 import eu.dissco.core.annotationlogic.schema.AnnotationTarget;
+import eu.dissco.core.annotationlogic.schema.DigitalSpecimen;
+import eu.dissco.core.annotationlogic.schema.GeologicalContext;
+import eu.dissco.core.annotationlogic.schema.Location;
 import eu.dissco.core.annotationlogic.schema.OaHasSelector;
+import eu.dissco.core.annotationlogic.schema.TaxonIdentification;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,6 +84,19 @@ class AnnotationValidatorImplTest {
     assertThat(result).isFalse();
   }
 
+  @ParameterizedTest
+  @MethodSource("validAnnotationsAndResult")
+  void testApplyAnnotations(Annotation annotation, DigitalSpecimen expected) throws Exception {
+    // Given
+    given(jsonSchemaValidator.specimenIsValid(any())).willReturn(true);
+
+    // When
+    var result = annotationValidator.applyAnnotation(givenDigitalSpecimen(), annotation);
+
+    // Then
+    assertThat(result).isEqualTo(expected);
+  }
+
 
   private static Stream<Arguments> validAnnotations() {
     return Stream.of(
@@ -104,7 +124,101 @@ class AnnotationValidatorImplTest {
             givenAnnotation(OaMotivation.ODS_ADDING, false)
                 .withOaHasTarget(geologicalContextAdd())
                 .withOaHasBody(geologicalContext())
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_DELETING, false)
         )
+    );
+  }
+
+  private static Stream<Arguments> validAnnotationsAndResult() {
+    return Stream.of(
+        Arguments.of(
+            givenAnnotation(OaMotivation.OA_EDITING, true),
+            givenDigitalSpecimen()
+                .withOdsHasEvents(List.of(
+                    givenEvent()
+                        .withOdsHasLocation(new Location()
+                            .withDwcCountry(NEW_VALUE))
+                ))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.OA_EDITING, false),
+            givenDigitalSpecimen()
+                .withOdsHasIdentifications(List.of(
+                    givenIdentification()
+                        .withOdsHasTaxonIdentifications(List.of(
+                            new TaxonIdentification()
+                                .withDwcGenus(NEW_VALUE)
+                                .withDwcPhylum(NEW_VALUE)
+                        ))
+                ))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, true),
+            givenDigitalSpecimen()
+                .withOdsHasEvents(List.of(
+                    givenEvent()
+                        .withOdsHasLocation(givenEvent().getOdsHasLocation()
+                            .withDwcLocality(NEW_VALUE))))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false),
+            givenDigitalSpecimen()
+                .withOdsHasIdentifications(List.of(givenIdentification()
+                    .withOdsHasTaxonIdentifications(
+                        List.of(
+                            givenIdentification().getOdsHasTaxonIdentifications().getFirst(),
+                            new TaxonIdentification()
+                                .withDwcGenus(NEW_VALUE)
+                                .withDwcPhylum(NEW_VALUE)
+                        )
+                    )
+                ))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.OA_EDITING, false),
+            givenDigitalSpecimen()
+                .withOdsHasIdentifications(List.of(givenIdentification()
+                    .withOdsHasTaxonIdentifications(List.of(
+                        new TaxonIdentification()
+                            .withDwcGenus(NEW_VALUE)
+                            .withDwcPhylum(NEW_VALUE)
+                    ))))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.OA_EDITING, false)
+                .withOaHasTarget(localityTargetEdit())
+                .withOaHasBody(localityBody()),
+            givenDigitalSpecimen()
+                .withOdsHasEvents(List.of(givenEvent()
+                    .withOdsHasLocation(
+                        new Location()
+                            .withDwcCountry(NEW_VALUE)
+                            .withDwcLocality(NEW_VALUE)
+                    )))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false)
+                .withOaHasTarget(geologicalContextAdd())
+                .withOaHasBody(geologicalContext()),
+            givenDigitalSpecimen()
+                .withOdsHasEvents(List.of(givenEvent().withOdsHasLocation(
+                    givenEvent().getOdsHasLocation()
+                        .withOdsHasGeologicalContext(
+                            new GeologicalContext().withDwcLithostratigraphicTerms(NEW_VALUE)))
+                ))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_DELETING, false),
+            givenDigitalSpecimen()
+                .withOdsHasIdentifications(
+                    List.of(givenIdentification().withOdsHasTaxonIdentifications(List.of())))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_DELETING, true),
+            givenDigitalSpecimen()
+                .withOdsHasEvents(List.of(givenEvent().withOdsHasLocation(new Location()))))
     );
   }
 
@@ -162,11 +276,22 @@ class AnnotationValidatorImplTest {
                     .withAdditionalProperty("@type", "ods:ClassSelector")
                     .withAdditionalProperty("ods:class", "$['ods:topicDiscipline']")
                 )
-        ))
+        )),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false)
+                .withOaHasBody(new AnnotationBody().withOaValue(List.of("value1")))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false)
+                .withOaHasBody(new AnnotationBody().withOaValue(List.of("""
+                    {
+                      "someField": "someValue"
+                    }
+                    """)))
+        ),
+        Arguments.of(givenAnnotation(OaMotivation.OA_COMMENTING,  false))
     );
-
   }
-
 
   private static AnnotationTarget localityTargetEdit() {
     return new AnnotationTarget()
@@ -192,8 +317,8 @@ class AnnotationValidatorImplTest {
   private static AnnotationBody localityBody() {
     return new AnnotationBody().withOaValue(List.of("""
         {
-          "dwc:country": "anotherCountry",
-          "dwc:locality" : "A new locality"
+          "dwc:country": "Some new value!",
+          "dwc:locality" : "Some new value!"
         }
         """));
   }
@@ -202,7 +327,7 @@ class AnnotationValidatorImplTest {
     return new AnnotationBody().withOaValue(List.of(
         """
             {
-              "dwc:lithostratigraphicTerms" : "Pleistocene-Weichselien"
+              "dwc:lithostratigraphicTerms" : "Some new value!"
             }
             """
     ));

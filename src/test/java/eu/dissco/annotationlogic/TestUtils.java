@@ -41,6 +41,8 @@ public class TestUtils {
   public static final String SPECIMEN_ID = DOI_PROXY + "10.3535/AAA-BBB-CCC";
   public static final String FDO_TYPE = "https://doi.org/21.T11148/cf458ca9ee1d44a5608f";
   public static final ObjectMapper MAPPER;
+  public static final String NEW_VALUE = "Some new value!";
+
   static {
     var mapper = new ObjectMapper().findAndRegisterModules();
     SimpleModule dateModule = new SimpleModule();
@@ -54,26 +56,29 @@ public class TestUtils {
   }
 
 
-  public static DigitalSpecimen givenDigitalSpecimen(){
+  public static DigitalSpecimen givenDigitalSpecimen() {
     return new DigitalSpecimen()
+        .withId(SPECIMEN_ID)
         .withDctermsIdentifier(SPECIMEN_ID)
+        .withOdsVersion(1)
+        .withOdsFdoType(FDO_TYPE)
+        .withDctermsCreated(Date.from(CREATED))
+        .withOdsMidsLevel(1)
+        .withType("ods:DigitalSpecimen")
         .withOdsOrganisationID("https://ror.org/039zvsn29")
         .withOdsOrganisationName("National Museum of Natural History")
         .withOdsPhysicalSpecimenIDType(OdsPhysicalSpecimenIDType.RESOLVABLE)
-        .withOdsPhysicalSpecimenID("https://data.biodiversitydata.nl/naturalis/specimen/ZMA.INS.1003070")
-        .withOdsNormalisedPhysicalSpecimenID("https://data.biodiversitydata.nl/naturalis/specimen/ZMA.INS.1003070")
+        .withOdsPhysicalSpecimenID(
+            "https://data.biodiversitydata.nl/naturalis/specimen/ZMA.INS.1003070")
+        .withOdsNormalisedPhysicalSpecimenID(
+            "https://data.biodiversitydata.nl/naturalis/specimen/ZMA.INS.1003070")
         .withOdsTopicDiscipline(OdsTopicDiscipline.BOTANY)
         .withOdsSourceSystemID(HANDLE_ID)
         .withOdsSourceSystemName("A Source System")
         .withOdsLivingOrPreserved(OdsLivingOrPreserved.PRESERVED)
         .withDctermsModified("2022-11-01T09:59:24.000Z")
         .withOdsHasIdentifications(
-            List.of(new Identification()
-                .withType("holotype")
-                .withOdsHasTaxonIdentifications(List.of(
-                    new TaxonIdentification()
-                        .withDwcScientificName("Bombus bombus")
-                ))
+            List.of(givenIdentification()
             )
         )
         .withOdsHasEntityRelationships(
@@ -96,20 +101,41 @@ public class TestUtils {
             )
         )
         .withOdsHasEvents(List.of(
-            new Event()
-                .withDwcEventDate("2022-11-01T09:59:24.000Z")
-                .withOdsHasLocation(new Location()
-                    .withDwcCountry("England"))
+          givenEvent()
         ));
   }
 
-  public static Annotation givenAnnotation(){
+  public static Event givenEvent() {
+    return
+        new Event()
+            .withDwcEventDate("2022-11-01T09:59:24.000Z")
+            .withOdsHasLocation(new Location()
+                .withDwcCountry("England"));
+  }
+
+  public static Identification givenIdentification() {
+    return new Identification()
+        .withType("holotype")
+        .withOdsHasTaxonIdentifications(List.of(
+            new TaxonIdentification()
+                .withDwcScientificName("Bombus bombus")
+        ));
+
+  }
+
+  public static Annotation givenAnnotation() {
     return givenAnnotation(OaMotivation.OA_EDITING, true);
   }
 
-  public static Annotation givenAnnotation(OaMotivation motivation, boolean isTermAnnotation){
+  public static Annotation givenAnnotation(OaMotivation motivation, boolean isTermAnnotation) {
     var target = isTermAnnotation ? givenOaTargetTerm(motivation) : givenOaTargetClass(motivation);
-    var body = isTermAnnotation ? givenOaBodyTerm() : givenOaBodyClass();
+    AnnotationBody body;
+    if (motivation.equals(OaMotivation.ODS_DELETING)) {
+      body = new AnnotationBody().withOaValue(List.of());
+    } else {
+      body = isTermAnnotation ? givenOaBodyTerm() : givenOaBodyClass();
+    }
+
     return new Annotation()
         .withId(HANDLE_ID)
         .withDctermsIdentifier(HANDLE_ID)
@@ -127,22 +153,22 @@ public class TestUtils {
         .withAsGenerator(givenAgent(Type.PROV_SOFTWARE_AGENT));
   }
 
-  private static AnnotationBody givenOaBodyTerm(){
+  private static AnnotationBody givenOaBodyTerm() {
     return new AnnotationBody()
         .withType("oa:TextualBody")
-        .withOaValue(new ArrayList<>(List.of("Some new value!")))
+        .withOaValue(new ArrayList<>(List.of(NEW_VALUE)))
         .withDctermsReferences(
             "https://medialib.naturalis.nl/file/id/ZMA.UROCH.P.1555/format/large")
         .withOdsScore(0.99);
   }
 
-  private static AnnotationBody givenOaBodyClass(){
+  private static AnnotationBody givenOaBodyClass() {
     return new AnnotationBody()
         .withType("oa:TextualBody")
         .withOaValue(new ArrayList<>(List.of("""
             {
-              "dwc:genus": "some genus",
-              "dwc:phylum": "some phylum"
+              "dwc:genus": "Some new value!",
+              "dwc:phylum": "Some new value!"
             }
             """)))
         .withDctermsReferences(
@@ -151,13 +177,13 @@ public class TestUtils {
   }
 
   private static AnnotationTarget givenOaTargetTerm(OaMotivation motivation) {
-    var path = OaMotivation.OA_EDITING.equals(motivation) ?
-        "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:country']" :
-        "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:locality']";
+    var path = OaMotivation.ODS_ADDING.equals(motivation) ?
+        "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:locality']" :
+        "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:country']";
     return givenAnnotationTarget(path);
   }
 
-  public static AnnotationTarget givenAnnotationTarget(String path){
+  public static AnnotationTarget givenAnnotationTarget(String path) {
     return new AnnotationTarget()
         .withId(SPECIMEN_ID)
         .withType("ods:DigitalSpecimen")
@@ -171,9 +197,9 @@ public class TestUtils {
   }
 
   private static AnnotationTarget givenOaTargetClass(OaMotivation motivation) {
-    var path = OaMotivation.OA_EDITING.equals(motivation) ?
-        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][0]" :
-        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][1]" ;
+    var path = OaMotivation.ODS_ADDING.equals(motivation) ?
+        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][1]" :
+        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][0]";
     return new AnnotationTarget()
         .withId(SPECIMEN_ID)
         .withType("ods:DigitalSpecimen")
@@ -192,7 +218,6 @@ public class TestUtils {
         .withId(HANDLE_ID)
         .withType(type);
   }
-
 
 
 }
