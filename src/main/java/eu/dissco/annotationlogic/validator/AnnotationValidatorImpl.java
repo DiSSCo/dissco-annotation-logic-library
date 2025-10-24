@@ -123,7 +123,7 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
     }
   }
 
-  private boolean doesNotAnnotateForbiddenFields(Annotation annotation) {
+  private static boolean doesNotAnnotateForbiddenFields(Annotation annotation) {
     var selector = getSelector(annotation);
     var lastKey = getLastKey(getTargetPath(annotation));
     if (SelectorType.CLASS_SELECTOR.equals(selector)) {
