@@ -13,7 +13,6 @@ import eu.dissco.core.annotationlogic.schema.OdsHasRelatedPID;
 import eu.dissco.core.annotationlogic.schema.OdsHasRole;
 import eu.dissco.core.annotationlogic.schema.SpecimenPart;
 import eu.dissco.core.annotationlogic.schema.TaxonIdentification;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import org.w3c.dom.events.Event;
@@ -42,22 +41,21 @@ public class ValidationUtils {
   public static final Map<String, Class<?>> CLASS_MAP;
 
   static {
-    var map = new HashMap<String, Class<?>>();
-    map.put("ods:hasAgents", Agent.class);
-    map.put("ods:hasAssertions", Assertion.class);
-    map.put("ods:hasChronometricAges", ChronometricAge.class);
-    map.put("ods:hasCitations", Citation.class);
-    map.put("ods:hasEntityRelationships", EntityRelationship.class);
-    map.put("ods:hasEvents", Event.class);
-    map.put("ods:hasGeologicalContext", GeologicalContext.class);
-    map.put("ods:hasIdentifications", Identification.class);
-    map.put("ods:hasIdentifiers", Identifier.class);
-    map.put("ods:hasLocation", Location.class);
-    map.put("ods:hasRelatedPIDs", OdsHasRelatedPID.class);
-    map.put("ods:hasRoles", OdsHasRole.class);
-    map.put("ods:hasSpecimenParts", SpecimenPart.class);
-    map.put("ods:hasTaxonIdentifications", TaxonIdentification.class);
-    CLASS_MAP = map;
+    CLASS_MAP = Map.ofEntries
+        (Map.entry("ods:hasAgents", Agent.class),
+        Map.entry("ods:hasAssertions", Assertion.class),
+        Map.entry("ods:hasChronometricAges", ChronometricAge.class),
+        Map.entry("ods:hasCitations", Citation.class),
+        Map.entry("ods:hasEntityRelationships", EntityRelationship.class),
+        Map.entry("ods:hasEvents", Event.class),
+        Map.entry("ods:hasGeologicalContext", GeologicalContext.class),
+        Map.entry("ods:hasIdentifications", Identification.class),
+        Map.entry("ods:hasIdentifiers", Identifier.class),
+        Map.entry("ods:hasLocation", Location.class),
+        Map.entry("ods:hasRelatedPIDs", OdsHasRelatedPID.class),
+        Map.entry("ods:hasRoles", OdsHasRole.class),
+        Map.entry("ods:hasSpecimenParts", SpecimenPart.class),
+        Map.entry("ods:hasTaxonIdentifications", TaxonIdentification.class));
   }
 
 
