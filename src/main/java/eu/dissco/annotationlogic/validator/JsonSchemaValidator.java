@@ -13,33 +13,13 @@ import org.springframework.beans.factory.annotation.Qualifier;
 
 public class JsonSchemaValidator {
 
-  private final JsonSchema mediaSchema;
   private final JsonSchema specimenSchema;
   private final ObjectMapper mapper;
   private static final Logger LOGGER = LoggerFactory.getLogger(JsonSchemaValidator.class);
 
-  public JsonSchemaValidator(@Qualifier("mediaSchema") JsonSchema mediaSchema,
-      @Qualifier("specimenSchema") JsonSchema specimenSchema, ObjectMapper mapper) {
-    this.mediaSchema = mediaSchema;
+  public JsonSchemaValidator(@Qualifier("specimenSchema") JsonSchema specimenSchema, ObjectMapper mapper) {
     this.specimenSchema = specimenSchema;
     this.mapper = mapper;
-  }
-
-  public boolean mediaIsValid(String digitalMediaString) {
-    JsonNode digitalMedia;
-    try {
-      digitalMedia = mapper.readTree(digitalMediaString);
-    } catch (JsonProcessingException e){
-      LOGGER.warn("Unable to read resulting digital specimen", e);
-      return false;
-    }
-    var errors = mediaSchema.validate(digitalMedia);
-    if (!errors.isEmpty()) {
-      var errorMessage = setErrorMessage(errors, "digital media", digitalMedia);
-      LOGGER.warn(errorMessage);
-      return false;
-    }
-    return true;
   }
 
   public boolean specimenIsValid(String digitalSpecimenString) {

@@ -26,7 +26,7 @@ class JsonSchemaValidatorTest {
     var schemaUrl = "json-schema/digital-specimen.json";
     try (var input = Thread.currentThread().getContextClassLoader().getResourceAsStream(schemaUrl)) {
       var schema = FACTORY.getSchema(input);
-      jsonSchemaValidator = new JsonSchemaValidator(null, schema, MAPPER);
+      jsonSchemaValidator = new JsonSchemaValidator(schema, MAPPER);
     }
   }
 
