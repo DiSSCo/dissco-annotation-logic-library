@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 public class InstantSerializer extends JsonSerializer<Instant> {
 
-  Logger logger = LoggerFactory.getLogger(InstantSerializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(InstantSerializer.class);
 
   @Override
   public void serialize(Instant value, JsonGenerator jsonGenerator,
@@ -21,7 +21,7 @@ public class InstantSerializer extends JsonSerializer<Instant> {
     try {
       jsonGenerator.writeString(FORMATTER.format(value));
     } catch (IOException e) {
-      logger.error("An error has occurred serializing a date. More information: {}", e.getMessage());
+      LOGGER.error("An error has occurred serializing a date. More information: {}", e.getMessage());
     }
   }
 }

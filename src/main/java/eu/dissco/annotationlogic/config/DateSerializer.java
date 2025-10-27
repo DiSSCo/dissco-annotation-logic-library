@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public class DateSerializer extends JsonSerializer<Date> {
 
-  Logger logger = LoggerFactory.getLogger(DateSerializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DateSerializer.class);
 
   @Override
   public void serialize(Date value, JsonGenerator jsonGenerator,
@@ -20,7 +20,7 @@ public class DateSerializer extends JsonSerializer<Date> {
     try {
       jsonGenerator.writeString(FORMATTER.format(value.toInstant()));
     } catch (IOException e) {
-      logger.error("An error has occurred serializing a date. More information: {}", e.getMessage());
+      LOGGER.error("An error has occurred serializing a date. More information: {}", e.getMessage());
     }
   }
 }

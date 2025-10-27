@@ -15,14 +15,14 @@ import org.slf4j.LoggerFactory;
 
 public class DateDeserializer extends JsonDeserializer<Date> {
 
-  Logger logger = LoggerFactory.getLogger(DateDeserializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DateDeserializer.class);
 
   @Override
   public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
     try {
       return Date.from(Instant.from(FORMATTER.parse(jsonParser.getText())));
     } catch (IOException e) {
-      logger.error("An error has occurred deserializing a date. More information: {}", e.getMessage());
+      LOGGER.error("An error has occurred deserializing a date. More information: {}", e.getMessage());
       return null;
     }
   }
