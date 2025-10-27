@@ -6,7 +6,6 @@ import eu.dissco.core.annotationlogic.schema.Annotation;
 import eu.dissco.core.annotationlogic.schema.DigitalMedia;
 import eu.dissco.core.annotationlogic.schema.DigitalSpecimen;
 import jakarta.annotation.Nonnull;
-import java.util.List;
 
 public interface AnnotationValidator {
 
@@ -51,29 +50,6 @@ public interface AnnotationValidator {
    * @throws InvalidAnnotationException If annotation is not valid
    */
   DigitalMedia applyAnnotation(@Nonnull DigitalMedia digitalMedia, @Nonnull Annotation annotation)
-      throws InvalidAnnotationException;
-
-  /**
-   * Applies a list of annotations to a target object Applies annotations from oldest to newest
-   *
-   * @param digitalSpecimen digital specimen being annotated
-   * @param annotations     annotations to apply.
-   * @return Target object with changes from the annotation
-   * @throws InvalidAnnotationException If any annotation is not valid
-   */
-  DigitalSpecimen applyAnnotations(@Nonnull DigitalSpecimen digitalSpecimen,
-      @Nonnull List<Annotation> annotations) throws InvalidAnnotationException, InvalidTargetException;
-
-  /**
-   * Applies a list of annotations to a target object Applies annotations from oldest to newest
-   *
-   * @param digitalMedia digital media being annotated
-   * @param annotations  annotations to apply.
-   * @return Target object with changes from the annotation
-   * @throws InvalidAnnotationException If any annotation is not valid
-   */
-  DigitalMedia applyAnnotations(@Nonnull DigitalMedia digitalMedia,
-      @Nonnull List<Annotation> annotations)
       throws InvalidAnnotationException;
 
 

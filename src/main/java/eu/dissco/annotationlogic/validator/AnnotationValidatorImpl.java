@@ -18,7 +18,6 @@ import eu.dissco.core.annotationlogic.schema.Annotation.OaMotivation;
 import eu.dissco.core.annotationlogic.schema.DigitalMedia;
 import eu.dissco.core.annotationlogic.schema.DigitalSpecimen;
 import jakarta.annotation.Nonnull;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -61,7 +60,7 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
   @Override
   public boolean annotationIsValid(@Nonnull DigitalMedia digitalMedia,
       @Nonnull Annotation annotation) {
-    return false;
+    throw new UnsupportedOperationException("Media validation not yet supported");
   }
 
   @Override
@@ -88,20 +87,7 @@ public class AnnotationValidatorImpl implements AnnotationValidator {
   public DigitalMedia applyAnnotation(@Nonnull DigitalMedia digitalMedia,
       @Nonnull Annotation annotation)
       throws InvalidAnnotationException {
-    return null;
-  }
-
-  @Override
-  public DigitalSpecimen applyAnnotations(@Nonnull DigitalSpecimen digitalSpecimen,
-      @Nonnull List<Annotation> annotations) throws InvalidAnnotationException {
-    return null;
-  }
-
-  @Override
-  public DigitalMedia applyAnnotations(@Nonnull DigitalMedia digitalMedia,
-      @Nonnull List<Annotation> annotations)
-      throws InvalidAnnotationException {
-    return null;
+    throw new UnsupportedOperationException("Media annotations not yet supported");
   }
 
   private boolean preapplicationChecks(DocumentContext context, Annotation annotation)
