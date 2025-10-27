@@ -12,24 +12,32 @@
   <groupId>eu.dissco</groupId>
   <artifactId>annotation-logic</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>annotation-logic</name>
-  <description>annotation-logic</description>
-  <url/>
+  <packaging>jar</packaging>
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>Library containing logic to validate and apply annotations to digital specimens and digital media.</description>
+  <url>https://github.com/DiSSCo/dissco-annotation-logic-library</url>
   <licenses>
-    <license/>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
   </licenses>
   <developers>
-    <developer/>
+    <developer>
+      <name>Soulaine Theocharides</name>
+      <email></email>
+      <organization>Distributed System of Scientific Collections</organization>
+      <organizationUrl>https://www.dissco.eu/</organizationUrl>
+    </developer>
   </developers>
   <scm>
-    <connection/>
-    <developerConnection/>
+    <connection>scm:git:git://github.com/DiSSCo/dissco-annotation-logic-library.git</connection>
+    <developerConnection>scm:git:ssh://github.com:DiSSCo/dissco-annotation-logic-library.git</developerConnection>
     <tag/>
-    <url/>
+    <url>https://github.com/DiSSCo/dissco-annotation-logic-library/tree/main</url>
   </scm>
   <properties>
     <java.version>21</java.version>
-    <springdoc.version>2.8.13</springdoc.version>
     <jsonpath.version>2.9.0</jsonpath.version>
     <jsonschema-validation.version>1.0.77</jsonschema-validation.version>
     <sonar.organization>dissco</sonar.organization>
@@ -41,11 +49,6 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.springdoc</groupId>
-      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-      <version>${springdoc.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>

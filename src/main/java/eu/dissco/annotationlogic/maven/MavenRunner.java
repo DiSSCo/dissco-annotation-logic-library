@@ -12,7 +12,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 public class MavenRunner {
 
@@ -38,7 +37,7 @@ public class MavenRunner {
     StringBuilder result = new StringBuilder();
     URL url = URI.create(schemaUrl).toURL();
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-    conn.setRequestMethod(RequestMethod.GET.name());
+    conn.setRequestMethod("GET");
     try (BufferedReader reader = new BufferedReader(
         new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
       String line;
