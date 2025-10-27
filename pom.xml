@@ -6,34 +6,63 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.6</version>
+    <version>3.5.7</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>eu.dissco</groupId>
   <artifactId>annotation-logic</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>annotation-logic</name>
-  <description>annotation-logic</description>
-  <url/>
+  <packaging>jar</packaging>
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>Library containing logic to validate and apply annotations to digital specimens and digital media.</description>
+  <url>https://github.com/DiSSCo/dissco-annotation-logic-library</url>
   <licenses>
-    <license/>
+    <license>
+      <name>Apache License 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
   </licenses>
   <developers>
-    <developer/>
+    <developer>
+      <name>Soulaine Theocharides</name>
+      <email>soulaine.theocharides@naturalis.nl</email>
+      <organization>Distributed System of Scientific Collections</organization>
+      <organizationUrl>https://www.dissco.eu/</organizationUrl>
+    </developer>
   </developers>
   <scm>
-    <connection/>
-    <developerConnection/>
+    <connection>scm:git:git://github.com/DiSSCo/dissco-annotation-logic-library.git</connection>
+    <developerConnection>scm:git:ssh://github.com:DiSSCo/dissco-annotation-logic-library.git</developerConnection>
     <tag/>
-    <url/>
+    <url>https://github.com/DiSSCo/dissco-annotation-logic-library/tree/main</url>
   </scm>
   <properties>
     <java.version>21</java.version>
+    <jsonpath.version>2.9.0</jsonpath.version>
+    <jsonschema-validation.version>1.0.77</jsonschema-validation.version>
+    <sonar.organization>dissco</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+    <sonar.coverage.jacoco.xmlReportPaths>../app-it/target/site/jacoco-aggregate/jacoco.xml
+    </sonar.coverage.jacoco.xmlReportPaths>
   </properties>
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.jayway.jsonpath</groupId>
+      <artifactId>json-path</artifactId>
+      <version>${jsonpath.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>${jsonschema-validation.version}</version>
     </dependency>
 
     <dependency>
@@ -48,6 +77,74 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.4.1</version>
+        <configuration>
+          <mainClass>eu.dissco.annotationlogic.maven.MavenRunner</mainClass>
+          <arguments>
+            <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-specimen/0.4.0/digital-specimen.json</argument>
+            <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-media/0.4.0/digital-media.json</argument>
+            <argument>https://schemas.dissco.tech/schemas/fdo-type/annotation/0.4.0/annotation.json</argument>
+          </arguments>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jsonschema2pojo</groupId>
+        <artifactId>jsonschema2pojo-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <configuration>
+          <sourceDirectory>${basedir}/src/main/resources/json-schema/</sourceDirectory>
+          <targetPackage>eu.dissco.core.annotationlogic.schema</targetPackage>
+          <generateBuilders>true</generateBuilders>
+          <includeConstructors>true</includeConstructors>
+          <includeDynamicBuilders>true</includeDynamicBuilders>
+          <includeAdditionalProperties>true</includeAdditionalProperties>
+          <inclusionLevel>NON_EMPTY</inclusionLevel>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>
+                generate
+              </goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.13</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>prepare-agent-integration</id>
+            <goals>
+              <goal>prepare-agent-integration</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report-integration</id>
+            <goals>
+              <goal>report-integration</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
