@@ -9,9 +9,9 @@
     <version>3.5.7</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
-  <groupId>eu.dissco</groupId>
+  <groupId>io.github.dissco</groupId>
   <artifactId>annotation-logic</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1.0</version>
   <packaging>jar</packaging>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Library containing logic to validate and apply annotations to digital specimens and digital media.</description>
@@ -83,7 +83,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.4.1</version>
         <configuration>
-          <mainClass>eu.dissco.annotationlogic.maven.MavenRunner</mainClass>
+          <mainClass>com.github.dissco.annotationlogic.maven.MavenRunner</mainClass>
           <arguments>
             <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-specimen/0.4.0/digital-specimen.json</argument>
             <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-media/0.4.0/digital-media.json</argument>
