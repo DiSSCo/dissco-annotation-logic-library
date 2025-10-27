@@ -1,4 +1,4 @@
-package eu.dissco.annotationlogic.config;
+package eu.dissco.annotationlogic.configuration;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;

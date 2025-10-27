@@ -1,4 +1,4 @@
-package eu.dissco.annotationlogic.config;
+package eu.dissco.annotationlogic.configuration;
 
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;

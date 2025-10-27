@@ -1,4 +1,4 @@
-package eu.dissco.annotationlogic.config;
+package eu.dissco.annotationlogic.configuration;
 
 import com.jayway.jsonpath.Option;
 import org.springframework.context.annotation.Bean;
