@@ -11,7 +11,7 @@
   </parent>
   <groupId>io.github.dissco</groupId>
   <artifactId>annotation-logic</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.4</version>
   <packaging>jar</packaging>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Library containing logic to validate and apply annotations to digital specimens and digital media.</description>
@@ -82,15 +82,11 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>${maven-exec.version}</version>
         <configuration>
-          <mainClass>com.github.dissco.annotationlogic.maven.MavenRunner</mainClass>
+          <mainClass>io.github.dissco.annotationlogic.maven.MavenRunner</mainClass>
           <arguments>
             <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-specimen/0.4.0/digital-specimen.json</argument>
             <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-media/0.4.0/digital-media.json</argument>
@@ -104,7 +100,7 @@
         <version>${jsonschema2pojo.version}</version>
         <configuration>
           <sourceDirectory>${basedir}/src/main/resources/json-schema/</sourceDirectory>
-          <targetPackage>eu.dissco.core.annotationlogic.schema</targetPackage>
+          <targetPackage>io.github.dissco.core.annotationlogic.schema</targetPackage>
           <generateBuilders>true</generateBuilders>
           <includeConstructors>true</includeConstructors>
           <includeDynamicBuilders>true</includeDynamicBuilders>
