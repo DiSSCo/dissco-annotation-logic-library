@@ -37,13 +37,20 @@
     <url>https://github.com/DiSSCo/dissco-annotation-logic-library/tree/main</url>
   </scm>
   <properties>
+    <jacoco.version>0.8.13</jacoco.version>
     <java.version>21</java.version>
     <jsonpath.version>2.9.0</jsonpath.version>
+    <jsonschema2pojo.version>1.2.1</jsonschema2pojo.version>
     <jsonschema-validation.version>1.0.77</jsonschema-validation.version>
+    <maven-exec.version>3.4.1</maven-exec.version>
+    <maven-gpg.version>3.2.4</maven-gpg.version>
+    <maven-javadoc.version>3.12.0</maven-javadoc.version>
+    <maven-source.version>3.3.1</maven-source.version>
     <sonar.organization>dissco</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.coverage.jacoco.xmlReportPaths>../app-it/target/site/jacoco-aggregate/jacoco.xml
     </sonar.coverage.jacoco.xmlReportPaths>
+    <sonatype.version>0.8.0</sonatype.version>
   </properties>
   <dependencies>
     <dependency>
@@ -81,7 +88,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.4.1</version>
+        <version>${maven-exec.version}</version>
         <configuration>
           <mainClass>com.github.dissco.annotationlogic.maven.MavenRunner</mainClass>
           <arguments>
@@ -94,7 +101,7 @@
       <plugin>
         <groupId>org.jsonschema2pojo</groupId>
         <artifactId>jsonschema2pojo-maven-plugin</artifactId>
-        <version>1.2.1</version>
+        <version>${jsonschema2pojo.version}</version>
         <configuration>
           <sourceDirectory>${basedir}/src/main/resources/json-schema/</sourceDirectory>
           <targetPackage>eu.dissco.core.annotationlogic.schema</targetPackage>
@@ -117,7 +124,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>${jacoco.version}</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
@@ -146,7 +153,62 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven-source.version}</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>${maven-gpg.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>${sonatype.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
-
 </project>

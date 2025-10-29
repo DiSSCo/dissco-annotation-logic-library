@@ -10,7 +10,9 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Service;
 
+@Service
 public class JsonSchemaValidator {
 
   private final JsonSchema specimenSchema;
@@ -20,6 +22,15 @@ public class JsonSchemaValidator {
   public JsonSchemaValidator(@Qualifier("specimenSchema") JsonSchema specimenSchema, ObjectMapper mapper) {
     this.specimenSchema = specimenSchema;
     this.mapper = mapper;
+  }
+
+  public boolean targetIsValid(String target, Class<?> clazz){
+    return switch (clazz.getSimpleName()) {
+      case "DigitalSpecimen" -> specimenIsValid(target);
+      case "DigitalMediaMedia" ->
+          throw new UnsupportedOperationException("Media validation not yet supported");
+      case null, default -> throw new UnsupportedOperationException("Target type not recognized");
+    };
   }
 
   public boolean specimenIsValid(String digitalSpecimenString) {

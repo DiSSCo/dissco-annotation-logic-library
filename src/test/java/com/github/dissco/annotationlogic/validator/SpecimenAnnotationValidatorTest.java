@@ -35,15 +35,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class AnnotationValidatorImplTest {
+class SpecimenAnnotationValidatorTest {
 
-  private AnnotationValidatorImpl annotationValidator;
+  private AnnotationValidator annotationValidator;
   @Mock
   private JsonSchemaValidator jsonSchemaValidator;
 
   @BeforeEach
   void setUp() {
-    annotationValidator = new AnnotationValidatorImpl(MAPPER,
+    annotationValidator = new AnnotationValidator(MAPPER,
         com.jayway.jsonpath.Configuration.builder()
             .options(Option.SUPPRESS_EXCEPTIONS)
             .build(), jsonSchemaValidator);
