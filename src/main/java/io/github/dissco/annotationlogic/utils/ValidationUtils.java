@@ -28,7 +28,7 @@ public class ValidationUtils {
       "ods:version",
       "dcterms:created",
       "dcterms:modified",
-      "ods:modsLevel",
+      "ods:midsLevel",
       "dcterms:identifier",
       "ods:fdoType",
       "ods:normalisedPhysicalSpecimenID",
