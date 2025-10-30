@@ -40,55 +40,17 @@ jobs:
                   -Dsonar.projectKey=DiSSCo_${{ github.event.repository.name }}
                   -Dsonar.coverage.exclusions=**/configuration/**,**/domain/**,**/exception/**,**/maven/**,**utils**
                   -Dgpg.key.skip=true
-      - name: Build image
-        run: |
-          docker build -t ${{ github.event.repository.name }} .
-      - name: Trivy - List all vulnerabilities
-        uses: aquasecurity/trivy-action@master
+      - name: Run Trivy vulnerability scanner in repo mode
+        uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: '${{ github.event.repository.name }}'
-          format: 'table'
+          scan-type: 'fs'
           ignore-unfixed: true
-          vuln-type: 'os,library'
-        env:
-          TRIVY_SKIP_DB_UPDATE: true
-          TRIVY_SKIP_JAVA_DB_UPDATE: true
-      - name: Trivy - Stop on Severe Vulnerabilities
-        uses: aquasecurity/trivy-action@master
-        if: github.event_name == 'pull_request'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          image-ref: '${{ github.event.repository.name }}'
-          format: 'table'
-          ignore-unfixed: true
-          trivyignores: .github/workflows/.trivyignore
-          exit-code: '1'
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-        env:
-          TRIVY_SKIP_DB_UPDATE: true
-          TRIVY_SKIP_JAVA_DB_UPDATE: true
-      - name: Login to Public ECR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v1
-        with:
-          registry: public.ecr.aws
-          username: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          password: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: public.ecr.aws/dissco/${{ github.event.repository.name }}
-          tags: |
-            type=sha
-            type=raw,value=latest
-      - name: Build and push
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          sarif_file: 'trivy-results.sarif'
       - name: Set outputs
         id: vars
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
