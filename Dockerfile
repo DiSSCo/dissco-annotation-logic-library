@@ -3,6 +3,7 @@ WORKDIR application
 ARG JAR_FILE=target/*.jar
 COPY ${JAR_FILE} application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
+RUN wget https://download.docker.com/linux/ubuntu/gpg
 
 FROM eclipse-temurin:21-jre-jammy
 RUN adduser --disabled-password -u 1000 java
