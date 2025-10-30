@@ -20,6 +20,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+          gpg-private-key: ${{ secrets.GPG_SIGNING_KEY }}
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
