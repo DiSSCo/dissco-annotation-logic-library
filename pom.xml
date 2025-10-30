@@ -40,6 +40,7 @@
     <url>https://github.com/DiSSCo/dissco-annotation-logic-library/tree/main</url>
   </scm>
   <properties>
+    <gpg.key.skip>false</gpg.key.skip>
     <jacoco.version>0.8.13</jacoco.version>
     <java.version>21</java.version>
     <jsonpath.version>2.9.0</jsonpath.version>
@@ -192,22 +193,13 @@
         <version>${maven-gpg.version}</version>
         <executions>
           <execution>
-            <id>sign-artifacts</id>
-            <phase>verify</phase>
             <goals>
               <goal>sign</goal>
             </goals>
-            <configuration>
-              <signer>bc</signer>
-            </configuration>
           </execution>
         </executions>
         <configuration>
-          <!-- Prevent gpg from using pinentry programs -->
-          <gpgArguments>
-            <arg>--pinentry-mode</arg>
-            <arg>loopback</arg>
-          </gpgArguments>
+          <skip>${gpg.key.skip}</skip>
         </configuration>
       </plugin>
 
