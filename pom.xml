@@ -14,7 +14,9 @@
   <version>0.1.4</version>
   <packaging>jar</packaging>
   <name>${project.groupId}:${project.artifactId}</name>
-  <description>Library containing logic to validate and apply annotations to digital specimens and digital media.</description>
+  <description>Library containing logic to validate and apply annotations to digital specimens and
+    digital media.
+  </description>
   <url>https://github.com/DiSSCo/dissco-annotation-logic-library</url>
   <licenses>
     <license>
@@ -32,7 +34,8 @@
   </developers>
   <scm>
     <connection>scm:git:git://github.com/DiSSCo/dissco-annotation-logic-library.git</connection>
-    <developerConnection>scm:git:ssh://github.com:DiSSCo/dissco-annotation-logic-library.git</developerConnection>
+    <developerConnection>scm:git:ssh://github.com:DiSSCo/dissco-annotation-logic-library.git
+    </developerConnection>
     <tag/>
     <url>https://github.com/DiSSCo/dissco-annotation-logic-library/tree/main</url>
   </scm>
@@ -88,9 +91,15 @@
         <configuration>
           <mainClass>io.github.dissco.annotationlogic.maven.MavenRunner</mainClass>
           <arguments>
-            <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-specimen/0.4.0/digital-specimen.json</argument>
-            <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-media/0.4.0/digital-media.json</argument>
-            <argument>https://schemas.dissco.tech/schemas/fdo-type/annotation/0.4.0/annotation.json</argument>
+            <argument>
+              https://schemas.dissco.tech/schemas/fdo-type/digital-specimen/0.4.0/digital-specimen.json
+            </argument>
+            <argument>
+              https://schemas.dissco.tech/schemas/fdo-type/digital-media/0.4.0/digital-media.json
+            </argument>
+            <argument>
+              https://schemas.dissco.tech/schemas/fdo-type/annotation/0.4.0/annotation.json
+            </argument>
           </arguments>
         </configuration>
       </plugin>
@@ -193,6 +202,13 @@
             </configuration>
           </execution>
         </executions>
+        <configuration>
+          <!-- Prevent gpg from using pinentry programs -->
+          <gpgArguments>
+            <arg>--pinentry-mode</arg>
+            <arg>loopback</arg>
+          </gpgArguments>
+        </configuration>
       </plugin>
 
       <plugin>
