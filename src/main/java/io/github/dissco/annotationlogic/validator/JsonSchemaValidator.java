@@ -16,21 +16,13 @@ import org.springframework.stereotype.Service;
 public class JsonSchemaValidator {
 
   private final JsonSchema specimenSchema;
+  @Qualifier("objectMapperLib")
   private final ObjectMapper mapper;
   private static final Logger LOGGER = LoggerFactory.getLogger(JsonSchemaValidator.class);
 
-  public JsonSchemaValidator(@Qualifier("specimenSchema") JsonSchema specimenSchema, ObjectMapper mapper) {
+  public JsonSchemaValidator(@Qualifier("specimenSchemaLib") JsonSchema specimenSchema, ObjectMapper mapper) {
     this.specimenSchema = specimenSchema;
     this.mapper = mapper;
-  }
-
-  public boolean targetIsValid(String target, Class<?> clazz){
-    return switch (clazz.getSimpleName()) {
-      case "DigitalSpecimen" -> specimenIsValid(target);
-      case "DigitalMediaMedia" ->
-          throw new UnsupportedOperationException("Media validation not yet supported");
-      case null, default -> throw new UnsupportedOperationException("Target type not recognized");
-    };
   }
 
   public boolean specimenIsValid(String digitalSpecimenString) {

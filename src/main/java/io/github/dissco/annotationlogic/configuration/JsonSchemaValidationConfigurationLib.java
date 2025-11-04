@@ -8,11 +8,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class JsonSchemaValidationConfiguration {
+public class JsonSchemaValidationConfigurationLib {
 
   private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(VersionFlag.V202012);
 
-  @Bean("mediaSchema")
+  @Bean("mediaSchemaLib")
   public JsonSchema mediaSchema() throws IOException {
     var schema = "json-schema/digital-media.json";
     try (var input = Thread.currentThread().getContextClassLoader().getResourceAsStream(schema)) {
@@ -20,7 +20,7 @@ public class JsonSchemaValidationConfiguration {
     }
   }
 
-  @Bean("specimenSchema")
+  @Bean("specimenSchemaLib")
   public JsonSchema specimenSchema() throws IOException {
     var schema = "json-schema/digital-specimen.json";
     try (var input = Thread.currentThread().getContextClassLoader().getResourceAsStream(schema)) {
