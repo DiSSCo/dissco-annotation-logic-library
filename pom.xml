@@ -9,12 +9,14 @@
     <version>3.5.7</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
-  <groupId>eu.dissco</groupId>
+  <groupId>io.github.dissco</groupId>
   <artifactId>annotation-logic</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1.5</version>
   <packaging>jar</packaging>
   <name>${project.groupId}:${project.artifactId}</name>
-  <description>Library containing logic to validate and apply annotations to digital specimens and digital media.</description>
+  <description>Library containing logic to validate and apply annotations to digital specimens and
+    digital media.
+  </description>
   <url>https://github.com/DiSSCo/dissco-annotation-logic-library</url>
   <licenses>
     <license>
@@ -32,18 +34,27 @@
   </developers>
   <scm>
     <connection>scm:git:git://github.com/DiSSCo/dissco-annotation-logic-library.git</connection>
-    <developerConnection>scm:git:ssh://github.com:DiSSCo/dissco-annotation-logic-library.git</developerConnection>
+    <developerConnection>scm:git:ssh://github.com:DiSSCo/dissco-annotation-logic-library.git
+    </developerConnection>
     <tag/>
     <url>https://github.com/DiSSCo/dissco-annotation-logic-library/tree/main</url>
   </scm>
   <properties>
+    <gpg.key.skip>false</gpg.key.skip>
+    <jacoco.version>0.8.13</jacoco.version>
     <java.version>21</java.version>
     <jsonpath.version>2.9.0</jsonpath.version>
+    <jsonschema2pojo.version>1.2.1</jsonschema2pojo.version>
     <jsonschema-validation.version>1.0.77</jsonschema-validation.version>
+    <maven-exec.version>3.4.1</maven-exec.version>
+    <maven-gpg.version>3.2.4</maven-gpg.version>
+    <maven-javadoc.version>3.12.0</maven-javadoc.version>
+    <maven-source.version>3.3.1</maven-source.version>
     <sonar.organization>dissco</sonar.organization>
     <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     <sonar.coverage.jacoco.xmlReportPaths>../app-it/target/site/jacoco-aggregate/jacoco.xml
     </sonar.coverage.jacoco.xmlReportPaths>
+    <sonatype.version>0.8.0</sonatype.version>
   </properties>
   <dependencies>
     <dependency>
@@ -75,29 +86,31 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
-        <version>3.4.1</version>
+        <version>${maven-exec.version}</version>
         <configuration>
-          <mainClass>eu.dissco.annotationlogic.maven.MavenRunner</mainClass>
+          <mainClass>io.github.dissco.annotationlogic.maven.MavenRunner</mainClass>
           <arguments>
-            <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-specimen/0.4.0/digital-specimen.json</argument>
-            <argument>https://schemas.dissco.tech/schemas/fdo-type/digital-media/0.4.0/digital-media.json</argument>
-            <argument>https://schemas.dissco.tech/schemas/fdo-type/annotation/0.4.0/annotation.json</argument>
+            <argument>
+              https://schemas.dissco.tech/schemas/fdo-type/digital-specimen/0.4.0/digital-specimen.json
+            </argument>
+            <argument>
+              https://schemas.dissco.tech/schemas/fdo-type/digital-media/0.4.0/digital-media.json
+            </argument>
+            <argument>
+              https://schemas.dissco.tech/schemas/fdo-type/annotation/0.4.0/annotation.json
+            </argument>
           </arguments>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.jsonschema2pojo</groupId>
         <artifactId>jsonschema2pojo-maven-plugin</artifactId>
-        <version>1.2.1</version>
+        <version>${jsonschema2pojo.version}</version>
         <configuration>
           <sourceDirectory>${basedir}/src/main/resources/json-schema/</sourceDirectory>
-          <targetPackage>eu.dissco.core.annotationlogic.schema</targetPackage>
+          <targetPackage>io.github.dissco.core.annotationlogic.schema</targetPackage>
           <generateBuilders>true</generateBuilders>
           <includeConstructors>true</includeConstructors>
           <includeDynamicBuilders>true</includeDynamicBuilders>
@@ -117,7 +130,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.13</version>
+        <version>${jacoco.version}</version>
         <executions>
           <execution>
             <id>prepare-agent</id>
@@ -146,7 +159,65 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven-source.version}</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>${maven-gpg.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <skip>${gpg.key.skip}</skip>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>${sonatype.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
-
 </project>
