@@ -30,7 +30,9 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
   private final Configuration jsonPathConfig;
   private final JsonSchemaValidator jsonSchemaValidator;
   private static final Pattern LAST_INDEX_PATTERN = Pattern.compile("\\[(?!.*\\[)(\\d+)]");
-  private static final Pattern LAST_KEY_PATTERN = Pattern.compile("\\[(?!.*\\[')(.*)']");
+  private static final Pattern LAST_KEY_PATTERN = Pattern.compile("\\[(?!.*\\[[\"'])(.*)[\"']]");
+  private static final Pattern BLOCK_NOTATION_PATTERN = Pattern.compile(
+      "^\\$((?:\\[['\"][A-Za-z:]+['\"]])+(?:\\[\\d+])*+)*+");
   private static final Logger LOGGER = LoggerFactory.getLogger(AnnotationValidator.class);
 
   public AnnotationValidator(ObjectMapper mapper, Configuration jsonPathConfig,
@@ -47,12 +49,9 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     try {
       target = mapper.writeValueAsString(digitalSpecimen);
       var context = using(jsonPathConfig).parse(target);
-      var initialPass = preapplicationChecks(context, annotation);
-      if (initialPass) {
-        var annotatedTarget = applyAnnotationToContext(context, annotation);
-        return jsonSchemaValidator.specimenIsValid(annotatedTarget);
-      }
-      return false;
+      preapplicationChecks(context, annotation);
+      var annotatedTarget = applyAnnotationToContext(context, annotation);
+      return jsonSchemaValidator.specimenIsValid(annotatedTarget);
     } catch (InvalidAnnotationException | JsonProcessingException e) {
       LOGGER.warn("An error has occurred processing the annotation", e);
       return false;
@@ -69,16 +68,14 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
       throws InvalidAnnotationException, InvalidTargetException {
     var target = getTargetAsString(digitalSpecimen);
     var context = using(jsonPathConfig).parse(target);
-    var initialPass = preapplicationChecks(context, annotation);
-    if (initialPass) {
-      var annotatedTarget = applyAnnotationToContext(context, annotation);
-      if (jsonSchemaValidator.specimenIsValid(annotatedTarget)) {
-        try {
-          return mapper.readValue(annotatedTarget, DigitalSpecimen.class);
-        } catch (JsonProcessingException e) {
-          LOGGER.warn("Unable to parse annotated target", e);
-          throw new InvalidAnnotationException("Unable to parse annotated target");
-        }
+    preapplicationChecks(context, annotation);
+    var annotatedTarget = applyAnnotationToContext(context, annotation);
+    if (jsonSchemaValidator.specimenIsValid(annotatedTarget)) {
+      try {
+        return mapper.readValue(annotatedTarget, DigitalSpecimen.class);
+      } catch (JsonProcessingException e) {
+        LOGGER.warn("Unable to parse annotated target", e);
+        throw new InvalidAnnotationException("Unable to parse annotated target");
       }
     }
     throw new InvalidAnnotationException("Annotation is not valid");
@@ -90,14 +87,21 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     throw new UnsupportedOperationException("Media validation not yet supported");
   }
 
-  private static boolean preapplicationChecks(DocumentContext context, Annotation annotation)
+  private static void preapplicationChecks(DocumentContext context, Annotation annotation)
       throws InvalidAnnotationException {
     var identifier = (String) context.read("$['dcterms:identifier']");
-    return
-        annotationTargetsObject(annotation, identifier)
-            && pathIsValid(context, annotation)
-            && doesNotAnnotateForbiddenFields(annotation)
-            && annotationHasCorrectValueCount(annotation);
+    if (!annotationTargetsObject(annotation, identifier)) {
+      throw new InvalidAnnotationException("Annotation does not target provided target");
+    }
+    if (!pathIsValid(context, annotation)) {
+      throw new InvalidAnnotationException("Selector path is not valid for annotation motivation");
+    }
+    if (!doesNotAnnotateForbiddenFields(annotation)) {
+      throw new InvalidAnnotationException("Annotation targets forbidden field");
+    }
+    if (!annotationHasCorrectValueCount(annotation)) {
+      throw new InvalidAnnotationException("Number of provided values is incorrect");
+    }
   }
 
 
@@ -126,6 +130,9 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
   private static boolean pathIsValid(DocumentContext context, Annotation annotation)
       throws InvalidAnnotationException {
     var path = getTargetPath(annotation);
+    if (!BLOCK_NOTATION_PATTERN.matcher(path).find()){
+      throw new InvalidAnnotationException("Selector path is not in valid JSON path format");
+    }
     if (OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())
         || OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation())) {
       return pathExists(context, path);
@@ -180,7 +187,8 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     return lastKeyMatcher.group(1)
         .replace("[", "")
         .replace("]", "")
-        .replace("'", "");
+        .replace("'", "")
+        .replace("\"", "");
   }
 
 
