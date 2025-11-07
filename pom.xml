@@ -11,7 +11,7 @@
   </parent>
   <groupId>io.github.dissco</groupId>
   <artifactId>annotation-logic</artifactId>
-  <version>0.1.6</version>
+  <version>0.1.11</version>
   <packaging>jar</packaging>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Library containing logic to validate and apply annotations to digital specimens and
@@ -80,6 +80,14 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
   </dependencies>
 
@@ -216,6 +224,14 @@
         <extensions>true</extensions>
         <configuration>
           <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <parameters>true</parameters>
         </configuration>
       </plugin>
     </plugins>

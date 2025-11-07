@@ -23,22 +23,17 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Service;
 
-@Service
 public class AnnotationValidator implements AnnotationValidatorInterface {
 
-  @Qualifier("objectMapperLib")
   private final ObjectMapper mapper;
-  @Qualifier("jsonPathConfigLib")
   private final Configuration jsonPathConfig;
   private final JsonSchemaValidator jsonSchemaValidator;
   private static final Pattern LAST_INDEX_PATTERN = Pattern.compile("\\[(?!.*\\[)(\\d+)]");
   private static final Pattern LAST_KEY_PATTERN = Pattern.compile("\\[(?!.*\\[')(.*)']");
   private static final Logger LOGGER = LoggerFactory.getLogger(AnnotationValidator.class);
 
-  protected AnnotationValidator(ObjectMapper mapper, Configuration jsonPathConfig,
+  public AnnotationValidator(ObjectMapper mapper, Configuration jsonPathConfig,
       JsonSchemaValidator jsonSchemaValidator) {
     this.mapper = mapper;
     this.jsonPathConfig = jsonPathConfig;

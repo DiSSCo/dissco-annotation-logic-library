@@ -1,7 +1,7 @@
 package io.github.dissco.annotationlogic.configuration;
 
 
-import static io.github.dissco.annotationlogic.configuration.ApplicationConfigurationLib.FORMATTER;
+import static io.github.dissco.annotationlogic.utils.DateUtils.FORMATTER;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
