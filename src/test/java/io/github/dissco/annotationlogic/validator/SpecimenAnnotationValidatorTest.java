@@ -10,10 +10,12 @@ import static io.github.dissco.annotationlogic.TestUtils.givenDigitalSpecimen;
 import static io.github.dissco.annotationlogic.TestUtils.givenEvent;
 import static io.github.dissco.annotationlogic.TestUtils.givenIdentification;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import com.jayway.jsonpath.Option;
+import io.github.dissco.annotationlogic.exception.InvalidAnnotationException;
 import io.github.dissco.core.annotationlogic.schema.Annotation;
 import io.github.dissco.core.annotationlogic.schema.Annotation.OaMotivation;
 import io.github.dissco.core.annotationlogic.schema.AnnotationBody;
@@ -49,27 +51,14 @@ class SpecimenAnnotationValidatorTest {
             .build(), jsonSchemaValidator);
   }
 
-  @ParameterizedTest
-  @MethodSource("validAnnotations")
-  void testValidAnnotation(Annotation annotation) {
-    // Given
-    given(jsonSchemaValidator.specimenIsValid(any())).willReturn(true);
-
-    // When
-    var result = annotationValidator.annotationIsValid(givenDigitalSpecimen(), annotation);
-
-    // Then
-    assertThat(result).isTrue();
-  }
 
   @ParameterizedTest
   @MethodSource("invalidAnnotations")
   void testInvalidAnnotation(Annotation annotation) {
-    // When
-    var result = annotationValidator.annotationIsValid(givenDigitalSpecimen(), annotation);
 
     // Then
-    assertThat(result).isFalse();
+    assertThrows(InvalidAnnotationException.class,
+        () -> annotationValidator.applyAnnotation(givenDigitalSpecimen(), annotation));
   }
 
   @Test
@@ -78,10 +67,8 @@ class SpecimenAnnotationValidatorTest {
     given(jsonSchemaValidator.specimenIsValid(any())).willReturn(false);
 
     // When
-    var result = annotationValidator.annotationIsValid(givenDigitalSpecimen(), givenAnnotation());
-
-    // Then
-    assertThat(result).isFalse();
+    assertThrows(InvalidAnnotationException.class,
+        () -> annotationValidator.applyAnnotation(givenDigitalSpecimen(), givenAnnotation()));
   }
 
   @ParameterizedTest
@@ -95,40 +82,6 @@ class SpecimenAnnotationValidatorTest {
 
     // Then
     assertThat(result).isEqualTo(expected);
-  }
-
-
-  private static Stream<Arguments> validAnnotations() {
-    return Stream.of(
-        Arguments.of(
-            givenAnnotation(OaMotivation.OA_EDITING, true)
-        ),
-        Arguments.of(
-            givenAnnotation(OaMotivation.OA_EDITING, false)
-        ),
-        Arguments.of(
-            givenAnnotation(OaMotivation.ODS_ADDING, true)
-        ),
-        Arguments.of(
-            givenAnnotation(OaMotivation.ODS_ADDING, false)
-        ),
-        Arguments.of(
-            givenAnnotation(OaMotivation.OA_EDITING, false)
-        ),
-        Arguments.of(
-            givenAnnotation(OaMotivation.OA_EDITING, false)
-                .withOaHasTarget(localityTargetEdit())
-                .withOaHasBody(localityBody())
-        ),
-        Arguments.of(
-            givenAnnotation(OaMotivation.ODS_ADDING, false)
-                .withOaHasTarget(geologicalContextAdd())
-                .withOaHasBody(geologicalContext())
-        ),
-        Arguments.of(
-            givenAnnotation(OaMotivation.ODS_DELETING, false)
-        )
-    );
   }
 
   private static Stream<Arguments> validAnnotationsAndResult() {
@@ -289,7 +242,7 @@ class SpecimenAnnotationValidatorTest {
                     }
                     """)))
         ),
-        Arguments.of(givenAnnotation(OaMotivation.OA_COMMENTING,  false))
+        Arguments.of(givenAnnotation(OaMotivation.OA_COMMENTING, false))
     );
   }
 
