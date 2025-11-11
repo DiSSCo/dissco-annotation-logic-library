@@ -1,6 +1,7 @@
 name: Build
 permissions:
   contents: write
+  security-events: read
 on:
   push:
     branches:
