@@ -1,6 +1,6 @@
 package io.github.dissco.annotationlogic.configuration;
 
-import static io.github.dissco.annotationlogic.configuration.ApplicationConfiguration.FORMATTER;
+import static io.github.dissco.annotationlogic.utils.DateUtils.FORMATTER;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -10,9 +10,9 @@ import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DateSerializer extends JsonSerializer<Date> {
+public class DateSerializerLib extends JsonSerializer<Date> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DateSerializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DateSerializerLib.class);
 
   @Override
   public void serialize(Date value, JsonGenerator jsonGenerator,

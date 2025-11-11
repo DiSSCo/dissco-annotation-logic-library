@@ -1,7 +1,7 @@
 package io.github.dissco.annotationlogic.configuration;
 
 
-import static io.github.dissco.annotationlogic.configuration.ApplicationConfiguration.FORMATTER;
+import static io.github.dissco.annotationlogic.utils.DateUtils.FORMATTER;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -11,9 +11,9 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class InstantSerializer extends JsonSerializer<Instant> {
+public class InstantSerializerLib extends JsonSerializer<Instant> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(InstantSerializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(InstantSerializerLib.class);
 
   @Override
   public void serialize(Instant value, JsonGenerator jsonGenerator,

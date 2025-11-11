@@ -1,6 +1,6 @@
 package io.github.dissco.annotationlogic.configuration;
 
-import static io.github.dissco.annotationlogic.configuration.ApplicationConfiguration.FORMATTER;
+import static io.github.dissco.annotationlogic.utils.DateUtils.FORMATTER;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -10,9 +10,9 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class InstantDeserializer extends JsonDeserializer<Instant> {
+public class InstantDeserializerLib extends JsonDeserializer<Instant> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(InstantDeserializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(InstantDeserializerLib.class);
 
   @Override
   public Instant deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {

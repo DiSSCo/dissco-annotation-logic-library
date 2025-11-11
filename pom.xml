@@ -11,7 +11,7 @@
   </parent>
   <groupId>io.github.dissco</groupId>
   <artifactId>annotation-logic</artifactId>
-  <version>0.1.5</version>
+  <version>0.1.14</version>
   <packaging>jar</packaging>
   <name>${project.groupId}:${project.artifactId}</name>
   <description>Library containing logic to validate and apply annotations to digital specimens and
@@ -216,6 +216,14 @@
         <extensions>true</extensions>
         <configuration>
           <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <parameters>true</parameters>
         </configuration>
       </plugin>
     </plugins>

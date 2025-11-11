@@ -1,7 +1,7 @@
 package io.github.dissco.annotationlogic.configuration;
 
 
-import static io.github.dissco.annotationlogic.configuration.ApplicationConfiguration.FORMATTER;
+import static io.github.dissco.annotationlogic.utils.DateUtils.FORMATTER;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -13,9 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class DateDeserializer extends JsonDeserializer<Date> {
+public class DateDeserializerLib extends JsonDeserializer<Date> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DateDeserializer.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(DateDeserializerLib.class);
 
   @Override
   public Date deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) {
