@@ -120,8 +120,11 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
       }
     } else if (OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())) {
       if (pathExists(context, path)) {
-        throw new InvalidAnnotationException(
-            "Invalid path. Target path must NOT exist for ods:adding annotation");
+        var parentPath = getParentPath(path);
+        if (pathExists(context, path) || !pathExists(context, parentPath)) {
+          throw new InvalidAnnotationException(
+              "Invalid path. Target path must NOT exist for ods:adding annotation, but parent path must exist. Use a class selector instead.");
+        }
       }
     } else {
       throw new InvalidAnnotationMotivationException(
@@ -147,8 +150,7 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     if (OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation()) && !annotation.getOaHasBody()
         .getOaValue().isEmpty()) {
       throw new InvalidAnnotationException("Deleting annotations must not have any value");
-    }
-    else if ((OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())
+    } else if ((OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())
         || OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())) &&
         annotation.getOaHasBody().getOaValue().size() != 1) {
       throw new InvalidAnnotationException(
