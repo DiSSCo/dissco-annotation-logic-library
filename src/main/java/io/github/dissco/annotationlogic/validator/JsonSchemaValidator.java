@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.ValidationMessage;
+import io.github.dissco.annotationlogic.exception.InvalidAnnotationException;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,21 +21,20 @@ public class JsonSchemaValidator {
     this.mapper = mapper;
   }
 
-  public boolean specimenIsValid(String digitalSpecimenString) {
+  public void specimenIsValid(String digitalSpecimenString) throws InvalidAnnotationException {
     JsonNode digitalSpecimen;
     try {
       digitalSpecimen = mapper.readTree(digitalSpecimenString);
     } catch (JsonProcessingException e) {
       LOGGER.warn("Unable to read resulting digital specimen", e);
-      return false;
+      throw new InvalidAnnotationException("Unable to read resulting digital specimen");
     }
     var errors = specimenSchema.validate(digitalSpecimen);
     if (!errors.isEmpty()) {
       var errorMessage = setErrorMessage(errors);
       LOGGER.warn(errorMessage);
-      return false;
+      throw new InvalidAnnotationException(errorMessage);
     }
-    return true;
   }
 
   private static String setErrorMessage(Set<ValidationMessage> validationErrors) {
