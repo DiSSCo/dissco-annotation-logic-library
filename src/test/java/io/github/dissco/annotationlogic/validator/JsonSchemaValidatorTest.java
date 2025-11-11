@@ -2,12 +2,14 @@ package io.github.dissco.annotationlogic.validator;
 
 import static io.github.dissco.annotationlogic.TestUtils.MAPPER;
 import static io.github.dissco.annotationlogic.TestUtils.givenDigitalSpecimen;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion.VersionFlag;
 import io.github.dissco.annotationlogic.TestUtils;
+import io.github.dissco.annotationlogic.exception.InvalidAnnotationException;
 import java.io.IOException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,13 +20,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class JsonSchemaValidatorTest {
 
-  private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(VersionFlag.V202012);
+  private static final JsonSchemaFactory FACTORY = JsonSchemaFactory.getInstance(
+      VersionFlag.V202012);
   private JsonSchemaValidator jsonSchemaValidator;
 
   @BeforeEach
   void setup() throws IOException {
     var schemaUrl = "json-schema/digital-specimen.json";
-    try (var input = Thread.currentThread().getContextClassLoader().getResourceAsStream(schemaUrl)) {
+    try (var input = Thread.currentThread().getContextClassLoader()
+        .getResourceAsStream(schemaUrl)) {
       var schema = FACTORY.getSchema(input);
       jsonSchemaValidator = new JsonSchemaValidator(schema, MAPPER);
     }
@@ -35,11 +39,9 @@ class JsonSchemaValidatorTest {
     // Given
     var specimen = MAPPER.writeValueAsString(givenDigitalSpecimen());
 
-    // When
-    var result = jsonSchemaValidator.specimenIsValid(specimen);
+    // When / Then
+    assertDoesNotThrow(() -> jsonSchemaValidator.specimenIsValid(specimen));
 
-    // Then
-    assertThat(result).isTrue();
   }
 
   @ParameterizedTest
@@ -47,16 +49,16 @@ class JsonSchemaValidatorTest {
   void testInvalidSpecimen(String digitalSpecimenString) {
     // Given
 
-    // When
-    var result = jsonSchemaValidator.specimenIsValid(digitalSpecimenString);
+    // When / Then
+    assertThrowsExactly(InvalidAnnotationException.class,
+        () -> jsonSchemaValidator.specimenIsValid(digitalSpecimenString));
 
-    // Then
-    assertThat(result).isFalse();
   }
 
   private static Stream<Arguments> invalidSpecimen() throws IOException {
     var jsonNodeSpecimen = (ObjectNode) MAPPER.valueToTree(TestUtils.givenDigitalSpecimen());
-    var missingRequiredValueSpecimen = (ObjectNode) MAPPER.valueToTree(TestUtils.givenDigitalSpecimen());
+    var missingRequiredValueSpecimen = (ObjectNode) MAPPER.valueToTree(
+        TestUtils.givenDigitalSpecimen());
     missingRequiredValueSpecimen.remove("dcterms:identifier");
 
     return Stream.of(

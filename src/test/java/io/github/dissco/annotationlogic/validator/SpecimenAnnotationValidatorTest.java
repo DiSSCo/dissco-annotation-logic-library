@@ -12,7 +12,7 @@ import static io.github.dissco.annotationlogic.TestUtils.givenIdentification;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 
 import com.jayway.jsonpath.Option;
 import io.github.dissco.annotationlogic.exception.InvalidAnnotationException;
@@ -62,9 +62,10 @@ class SpecimenAnnotationValidatorTest {
   }
 
   @Test
-  void testInvalidResult() {
+  void testInvalidResult() throws InvalidAnnotationException {
+
     // Given
-    given(jsonSchemaValidator.specimenIsValid(any())).willReturn(false);
+    doThrow(InvalidAnnotationException.class).when(jsonSchemaValidator).specimenIsValid(any());
 
     // When
     assertThrows(InvalidAnnotationException.class,
@@ -75,7 +76,6 @@ class SpecimenAnnotationValidatorTest {
   @MethodSource("validAnnotationsAndResult")
   void testApplyAnnotations(Annotation annotation, DigitalSpecimen expected) throws Exception {
     // Given
-    given(jsonSchemaValidator.specimenIsValid(any())).willReturn(true);
 
     // When
     var result = annotationValidator.applyAnnotation(givenDigitalSpecimen(), annotation);
@@ -175,7 +175,6 @@ class SpecimenAnnotationValidatorTest {
     );
   }
 
-
   private static Stream<Arguments> invalidAnnotations() {
     return Stream.of(
         Arguments.of(
@@ -220,7 +219,6 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(givenAnnotation().withOaHasBody(new AnnotationBody().withOaValue(List.of()))),
         Arguments.of(givenAnnotation().withOaHasBody(
             new AnnotationBody().withOaValue(List.of("value1", "value2")))),
-        Arguments.of(givenAnnotation()),
         Arguments.of(givenAnnotation(OaMotivation.OA_EDITING, false).withOaHasTarget(
             new AnnotationTarget()
                 .withDctermsIdentifier(SPECIMEN_ID)

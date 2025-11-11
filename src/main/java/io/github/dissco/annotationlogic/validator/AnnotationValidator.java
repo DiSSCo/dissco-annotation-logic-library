@@ -49,15 +49,13 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     var context = using(jsonPathConfig).parse(target);
     preapplicationChecks(context, annotation);
     var annotatedTarget = applyAnnotationToContext(context, annotation);
-    if (jsonSchemaValidator.specimenIsValid(annotatedTarget)) {
-      try {
-        return mapper.readValue(annotatedTarget, DigitalSpecimen.class);
-      } catch (JsonProcessingException e) {
-        LOGGER.warn("Unable to parse annotated target", e);
-        throw new InvalidAnnotationException("Unable to parse annotated target");
-      }
+    try {
+      jsonSchemaValidator.specimenIsValid(annotatedTarget);
+      return mapper.readValue(annotatedTarget, DigitalSpecimen.class);
+    } catch (JsonProcessingException e) {
+      LOGGER.warn("Unable to parse annotated target", e);
+      throw new InvalidAnnotationException("Unable to parse annotated target");
     }
-    throw new InvalidAnnotationException("Annotation is not valid");
   }
 
   @Override
