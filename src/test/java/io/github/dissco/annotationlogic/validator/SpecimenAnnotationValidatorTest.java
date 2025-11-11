@@ -209,6 +209,14 @@ class SpecimenAnnotationValidatorTest {
                 )
         ),
         Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, true)
+                .withOaHasTarget(
+                    givenAnnotationTarget(
+                        "$['ods:hasCitations'][0]['dcterms:description']"
+                    )
+                )
+        ),
+        Arguments.of(
             givenAnnotation(OaMotivation.ODS_DELETING, true)
                 .withOaHasTarget(
                     givenAnnotationTarget(

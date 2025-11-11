@@ -110,19 +110,17 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     if (!BLOCK_NOTATION_PATTERN.matcher(path).find()) {
       throw new InvalidAnnotationException("Selector path is not in valid JSON path format");
     }
-    if (OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())
-        || OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation())) {
+    if ((OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())
+        || OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation()))) {
       if (!pathExists(context, path)) {
         throw new InvalidAnnotationException(
             "Invalid path. Target path must exist for ods:editing annotation");
       }
     } else if (OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())) {
-      if (pathExists(context, path)) {
-        var parentPath = getParentPath(path);
-        if (pathExists(context, path) || !pathExists(context, parentPath)) {
-          throw new InvalidAnnotationException(
-              "Invalid path. Target path must NOT exist for ods:adding annotation, but parent path must exist. Use a class selector instead.");
-        }
+      var parentPath = getParentPath(path);
+      if (pathExists(context, path) || !pathExists(context, parentPath)) {
+        throw new InvalidAnnotationException(
+            "Invalid path. Target path must NOT exist for ods:adding annotation, but parent path must exist. Use a class selector instead.");
       }
     } else {
       throw new InvalidAnnotationMotivationException(
