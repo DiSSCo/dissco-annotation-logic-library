@@ -198,7 +198,7 @@ public class TestUtils {
 
   private static AnnotationTarget givenOaTargetClass(OaMotivation motivation) {
     var path = OaMotivation.ODS_ADDING.equals(motivation) ?
-        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][1]" :
+        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][*]" :
         "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][0]";
     return new AnnotationTarget()
         .withId(SPECIMEN_ID)
