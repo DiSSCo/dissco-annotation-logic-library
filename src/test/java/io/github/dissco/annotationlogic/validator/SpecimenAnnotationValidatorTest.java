@@ -51,7 +51,6 @@ class SpecimenAnnotationValidatorTest {
             .build(), jsonSchemaValidator);
   }
 
-
   @ParameterizedTest
   @MethodSource("invalidAnnotations")
   void testInvalidAnnotation(Annotation annotation) {
@@ -171,7 +170,20 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_DELETING, true),
             givenDigitalSpecimen()
-                .withOdsHasEvents(List.of(givenEvent().withOdsHasLocation(new Location()))))
+                .withOdsHasEvents(List.of(givenEvent().withOdsHasLocation(new Location())))),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, true)
+                .withOaHasBody(new AnnotationBody()
+                    .withOaValue(List.of("[\"English\", \"French\"]")))
+                .withOaHasTarget(givenAnnotationTarget("")
+                    .withOaHasSelector(
+                        new OaHasSelector()
+                            .withAdditionalProperty("ods:term", "$['ods:metadataLanguages']")
+                            .withAdditionalProperty("@type", "ods:TermSelector"))
+                ),
+            givenDigitalSpecimen()
+                .withOdsMetadataLanguages(List.of("English", "French"))
+        )
     );
   }
 
@@ -240,7 +252,21 @@ class SpecimenAnnotationValidatorTest {
                     }
                     """)))
         ),
-        Arguments.of(givenAnnotation(OaMotivation.OA_COMMENTING, false))
+        Arguments.of(givenAnnotation(OaMotivation.OA_COMMENTING, false)),
+        Arguments.of(givenAnnotation().withOaHasTarget(givenAnnotationTarget("")
+            .withOaHasSelector(
+                new OaHasSelector().withAdditionalProperty("@type", "oa:FragmentSelector")))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, true)
+                .withOaHasBody(new AnnotationBody()
+                    .withOaValue(List.of("English, French")))
+                .withOaHasTarget(givenAnnotationTarget("")
+                    .withOaHasSelector(
+                        new OaHasSelector()
+                            .withAdditionalProperty("ods:term", "$['ods:metadataLanguages']")
+                            .withAdditionalProperty("@type", "ods:TermSelector"))
+                ))
     );
   }
 

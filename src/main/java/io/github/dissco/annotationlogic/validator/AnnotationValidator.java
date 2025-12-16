@@ -2,8 +2,10 @@ package io.github.dissco.annotationlogic.validator;
 
 import static com.jayway.jsonpath.JsonPath.using;
 import static io.github.dissco.annotationlogic.utils.ValidationUtils.CLASS_MAP;
+import static io.github.dissco.annotationlogic.utils.ValidationUtils.SPECIMEN_PRIMITIVE_ARRAYS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -193,12 +195,7 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
   private String applyAnnotationToContext(DocumentContext context, Annotation annotation)
       throws InvalidAnnotationException {
     var selectorType = getSelector(annotation);
-    if (SelectorType.TERM_SELECTOR.equals(selectorType)) {
-      return applyAnnotation(context, annotation, false);
-    } else if (SelectorType.CLASS_SELECTOR.equals(selectorType)) {
-      return applyAnnotation(context, annotation, true);
-    }
-    throw new InvalidAnnotationException("Invalid selector: " + selectorType);
+    return applyAnnotation(context, annotation, SelectorType.CLASS_SELECTOR.equals(selectorType));
   }
 
   private String applyAnnotation(DocumentContext context, Annotation annotation,
@@ -210,7 +207,7 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     } else {
       var annotationValueObject = isClassAnnotation ?
           mapAnnotationValueToTargetClass(path, annotation) :
-          annotation.getOaHasBody().getOaValue().getFirst();
+          mapAnnotationValueToTargetField(path, annotation);
       if (OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())) {
         context.set(path, annotationValueObject);
       } else {
@@ -242,6 +239,23 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
           "Unable to read value " + annotation.getOaHasBody().getOaValue().getFirst()
               + " as class " + targetClass);
     }
+  }
+
+  private Object mapAnnotationValueToTargetField(String path, Annotation annotation)
+      throws InvalidAnnotationException {
+    var value = annotation.getOaHasBody().getOaValue().getFirst();
+    var key = getLastKey(path);
+    if (SPECIMEN_PRIMITIVE_ARRAYS.contains(key)) {
+      try {
+        return mapper.readValue(value, new TypeReference<List<String>>() {
+        });
+      } catch (JsonProcessingException e) {
+        LOGGER.warn("Unable to read {} as array", value, e);
+        throw new InvalidAnnotationException(
+            "Unable to read " + value + "as array for field " + key);
+      }
+    }
+    return value;
   }
 
   private void applyAddAnnotation(DocumentContext context, String path, String parentPath,

@@ -41,6 +41,12 @@ public class ValidationUtils {
       "ods:hasTombstoneMetadata"
   );
 
+  public static final Set<String> SPECIMEN_PRIMITIVE_ARRAYS = Set.of(
+      "dcterms:format",
+      "ods:metadataLanguages",
+      "dcterms:subject"
+  );
+
   public static final Map<String, Class<?>> CLASS_MAP;
 
   static {
