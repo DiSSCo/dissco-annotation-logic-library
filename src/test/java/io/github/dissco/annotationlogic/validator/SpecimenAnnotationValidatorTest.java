@@ -1,5 +1,6 @@
 package io.github.dissco.annotationlogic.validator;
 
+import static io.github.dissco.annotationlogic.TestUtils.FDO_TYPE;
 import static io.github.dissco.annotationlogic.TestUtils.MAPPER;
 import static io.github.dissco.annotationlogic.TestUtils.MEDIA_ID;
 import static io.github.dissco.annotationlogic.TestUtils.NEW_VALUE;
@@ -22,6 +23,7 @@ import io.github.dissco.core.annotationlogic.schema.AnnotationBody;
 import io.github.dissco.core.annotationlogic.schema.AnnotationTarget;
 import io.github.dissco.core.annotationlogic.schema.DigitalSpecimen;
 import io.github.dissco.core.annotationlogic.schema.GeologicalContext;
+import io.github.dissco.core.annotationlogic.schema.Identification;
 import io.github.dissco.core.annotationlogic.schema.Location;
 import io.github.dissco.core.annotationlogic.schema.OaHasSelector;
 import io.github.dissco.core.annotationlogic.schema.TaxonIdentification;
@@ -78,6 +80,42 @@ class SpecimenAnnotationValidatorTest {
 
     // When
     var result = annotationValidator.applyAnnotation(givenDigitalSpecimen(), annotation);
+
+    // Then
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void testApplyAnnotationsMissingParent() throws Exception {
+    // Given
+    var annotation = givenAnnotation(OaMotivation.ODS_ADDING, false)
+        .withOaHasTarget(
+            new AnnotationTarget()
+                .withId(SPECIMEN_ID)
+                .withType("ods:DigitalSpecimen")
+                .withOdsFdoType(FDO_TYPE)
+                .withDctermsIdentifier(SPECIMEN_ID)
+                .withOaHasSelector(
+                    new OaHasSelector()
+                        .withAdditionalProperty("ods:class",
+                            "$['ods:hasIdentifications'][*]['ods:hasTaxonIdentifications'][*]")
+                        .withAdditionalProperty("@type", "ods:ClassSelector")
+                )
+        );
+    var specimen = givenDigitalSpecimen().withOdsHasIdentifications(List.of());
+    var expected = givenDigitalSpecimen()
+        .withOdsHasIdentifications(List.of(new Identification()
+            .withOdsHasTaxonIdentifications(
+                List.of(
+                    new TaxonIdentification()
+                        .withDwcGenus(NEW_VALUE)
+                        .withDwcPhylum(NEW_VALUE)
+                )
+            ))
+        );
+
+    // When
+    var result = annotationValidator.applyAnnotation(specimen, annotation);
 
     // Then
     assertThat(result).isEqualTo(expected);
@@ -175,14 +213,23 @@ class SpecimenAnnotationValidatorTest {
             givenAnnotation(OaMotivation.ODS_ADDING, true)
                 .withOaHasBody(new AnnotationBody()
                     .withOaValue(List.of("[\"English\", \"French\"]")))
-                .withOaHasTarget(givenAnnotationTarget("")
-                    .withOaHasSelector(
-                        new OaHasSelector()
-                            .withAdditionalProperty("ods:term", "$['ods:metadataLanguages']")
-                            .withAdditionalProperty("@type", "ods:TermSelector"))
-                ),
+                .withOaHasTarget(givenAnnotationTarget("$['ods:metadataLanguages']")),
             givenDigitalSpecimen()
                 .withOdsMetadataLanguages(List.of("English", "French"))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, true)
+                .withOaHasTarget(
+                    givenAnnotationTarget(
+                        "$['ods:hasEvents'][0]['ods:hasLocation']['ods:hasGeologicalContext']['dwc:group']")
+                )
+                .withOaHasBody(new AnnotationBody().withOaValue(List.of(NEW_VALUE))),
+            givenDigitalSpecimen()
+                .withOdsHasEvents(List.of(givenEvent().withOdsHasLocation(
+                    givenEvent().getOdsHasLocation()
+                        .withOdsHasGeologicalContext(
+                            new GeologicalContext().withDwcGroup(NEW_VALUE)))
+                ))
         )
     );
   }
@@ -261,12 +308,15 @@ class SpecimenAnnotationValidatorTest {
             givenAnnotation(OaMotivation.ODS_ADDING, true)
                 .withOaHasBody(new AnnotationBody()
                     .withOaValue(List.of("English, French")))
-                .withOaHasTarget(givenAnnotationTarget("")
-                    .withOaHasSelector(
-                        new OaHasSelector()
-                            .withAdditionalProperty("ods:term", "$['ods:metadataLanguages']")
-                            .withAdditionalProperty("@type", "ods:TermSelector"))
-                ))
+                .withOaHasTarget(givenAnnotationTarget("$['ods:metadataLanguages']"))),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false)
+                .withOaHasTarget(
+                    givenAnnotationTarget(
+                        "$['ods:hasTombstoneMetadata']"
+                    )
+                )
+        )
     );
   }
 
