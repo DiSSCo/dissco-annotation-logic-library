@@ -130,12 +130,12 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     }
     if ((OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())
         || OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation()))) {
-      if (!pathExists(context, path)) {
+      if (!pathExists(context, path) || path.contains(WILDCARD_INDEX_PATTERN)) {
         throw new InvalidAnnotationException(
-            "Invalid path. Target path must exist for ods:editing annotation");
+            "Invalid path. Target path must exist for ods:editing and deleting annotations and may not contain wildcards.");
       }
     } else if (OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())) {
-      if (pathExists(context, path) && !path.endsWith(WILDCARD_INDEX_PATTERN)) {
+      if (!addingPathIsValid(context, path)) {
         throw new InvalidAnnotationException(
             "Invalid path. Target path must NOT exist for ods:adding annotation");
       }
@@ -169,6 +169,23 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
       throw new InvalidAnnotationException(
           "Editing or adding annotations must have exactly one value");
     }
+  }
+
+  // Verifies that paths containing explicit indexes exist. Overall path must not exist.
+  private static boolean addingPathIsValid(DocumentContext context, String path) {
+    if (pathExists(context, path) && !path.contains(WILDCARD_INDEX_PATTERN)) {
+      return false;
+    }
+    var segments = getSegments(path);
+    var currentPath = "$";
+    for (var segment : segments) {
+      currentPath = getNextPath(currentPath, segment);
+      if (NUMERIC_PATTERN.matcher(segment).find() && !pathExists(context, currentPath)
+          && !currentPath.contains(WILDCARD_INDEX_PATTERN)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private static boolean pathExists(DocumentContext context, String path) {

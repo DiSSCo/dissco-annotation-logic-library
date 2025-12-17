@@ -324,6 +324,28 @@ class SpecimenAnnotationValidatorTest {
                         "$['ods:livingOrPreserved']"
                     )
                 ).withOaHasBody(new AnnotationBody().withOaValue(List.of(NEW_VALUE)))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_DELETING, true)
+                .withOaHasTarget(
+                    givenAnnotationTarget(
+                        "$['ods:hasEvents'][*]"
+                    )
+                )
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false)
+                .withOaHasTarget(
+                    givenAnnotationTarget(
+                        "$['ods:hasIdentifications'][*]['ods:hasTaxonIdentifications'][1]")
+                )
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false)
+                .withOaHasTarget(
+                    givenAnnotationTarget(
+                        "$['ods:hasIdentifications'][2]['ods:hasTaxonIdentifications'][*]")
+                )
         )
     );
   }
