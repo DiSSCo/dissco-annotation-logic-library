@@ -316,6 +316,14 @@ class SpecimenAnnotationValidatorTest {
                         "$['ods:hasTombstoneMetadata']"
                     )
                 )
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_DELETING, true)
+                .withOaHasTarget(
+                    givenAnnotationTarget(
+                        "$['ods:livingOrPreserved']"
+                    )
+                ).withOaHasBody(new AnnotationBody().withOaValue(List.of(NEW_VALUE)))
         )
     );
   }
