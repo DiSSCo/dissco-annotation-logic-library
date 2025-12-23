@@ -6,6 +6,7 @@ import io.github.dissco.core.annotationlogic.schema.Assertion;
 import io.github.dissco.core.annotationlogic.schema.ChronometricAge;
 import io.github.dissco.core.annotationlogic.schema.Citation;
 import io.github.dissco.core.annotationlogic.schema.EntityRelationship;
+import io.github.dissco.core.annotationlogic.schema.Event;
 import io.github.dissco.core.annotationlogic.schema.GeologicalContext;
 import io.github.dissco.core.annotationlogic.schema.Georeference;
 import io.github.dissco.core.annotationlogic.schema.Identification;
@@ -17,7 +18,7 @@ import io.github.dissco.core.annotationlogic.schema.SpecimenPart;
 import io.github.dissco.core.annotationlogic.schema.TaxonIdentification;
 import java.util.Map;
 import java.util.Set;
-import org.w3c.dom.events.Event;
+
 
 public class ValidationUtils {
 
@@ -38,6 +39,12 @@ public class ValidationUtils {
 
   public static final Set<String> FORBIDDEN_CLASSES = Set.of(
       "ods:hasTombstoneMetadata"
+  );
+
+  public static final Set<String> SPECIMEN_PRIMITIVE_ARRAYS = Set.of(
+      "dcterms:format",
+      "ods:metadataLanguages",
+      "dcterms:subject"
   );
 
   public static final Map<String, Class<?>> CLASS_MAP;

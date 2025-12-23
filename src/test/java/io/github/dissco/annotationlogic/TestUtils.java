@@ -52,7 +52,7 @@ public class TestUtils {
     dateModule.addDeserializer(Date.class, new DateDeserializerLib());
     mapper.registerModule(dateModule);
     mapper.setSerializationInclusion(Include.NON_NULL);
-    MAPPER = mapper.copy();
+    MAPPER = mapper;
   }
 
 
@@ -94,7 +94,7 @@ public class TestUtils {
                             .withSchemaName("Processing service")
                             .withSchemaIdentifier(HANDLE_ID)
                             .withOdsHasRoles(List.of(new OdsHasRole().withType("schema:Role")
-                                .withSchemaRoleName("ods:sourceSyste,")))
+                                .withSchemaRoleName("ods:sourceSystem")))
                     ))
                     .withDwcRelatedResourceID(MEDIA_ID)
                     .withOdsRelatedResourceURI(URI.create(MEDIA_ID))
@@ -128,7 +128,8 @@ public class TestUtils {
   }
 
   public static Annotation givenAnnotation(OaMotivation motivation, boolean isTermAnnotation) {
-    var target = isTermAnnotation ? givenOaTargetTerm(motivation) : givenOaTargetClass(motivation);
+    var target = isTermAnnotation ? givenOaTargetTerm(motivation)
+        : givenAnnotationTargetClass(motivation, null);
     AnnotationBody body;
     if (motivation.equals(OaMotivation.ODS_DELETING)) {
       body = new AnnotationBody().withOaValue(List.of());
@@ -180,10 +181,10 @@ public class TestUtils {
     var path = OaMotivation.ODS_ADDING.equals(motivation) ?
         "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:locality']" :
         "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:country']";
-    return givenAnnotationTarget(path);
+    return givenAnnotationTargetTerm(path);
   }
 
-  public static AnnotationTarget givenAnnotationTarget(String path) {
+  public static AnnotationTarget givenAnnotationTargetTerm(String path) {
     return new AnnotationTarget()
         .withId(SPECIMEN_ID)
         .withType("ods:DigitalSpecimen")
@@ -196,10 +197,12 @@ public class TestUtils {
         );
   }
 
-  private static AnnotationTarget givenOaTargetClass(OaMotivation motivation) {
-    var path = OaMotivation.ODS_ADDING.equals(motivation) ?
-        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][1]" :
-        "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][0]";
+  public static AnnotationTarget givenAnnotationTargetClass(OaMotivation motivation, String path) {
+    if (path == null) {
+      path = OaMotivation.ODS_ADDING.equals(motivation) ?
+          "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][*]" :
+          "$['ods:hasIdentifications'][0]['ods:hasTaxonIdentifications'][0]";
+    }
     return new AnnotationTarget()
         .withId(SPECIMEN_ID)
         .withType("ods:DigitalSpecimen")
@@ -212,7 +215,7 @@ public class TestUtils {
         );
   }
 
-  private static Agent givenAgent(Type type) {
+  public static Agent givenAgent(Type type) {
     return new Agent()
         .withSchemaName("Some agent")
         .withId(HANDLE_ID)

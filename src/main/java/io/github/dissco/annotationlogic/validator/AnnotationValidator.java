@@ -2,8 +2,10 @@ package io.github.dissco.annotationlogic.validator;
 
 import static com.jayway.jsonpath.JsonPath.using;
 import static io.github.dissco.annotationlogic.utils.ValidationUtils.CLASS_MAP;
+import static io.github.dissco.annotationlogic.utils.ValidationUtils.SPECIMEN_PRIMITIVE_ARRAYS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.DocumentContext;
@@ -18,6 +20,9 @@ import io.github.dissco.core.annotationlogic.schema.Annotation.OaMotivation;
 import io.github.dissco.core.annotationlogic.schema.DigitalMedia;
 import io.github.dissco.core.annotationlogic.schema.DigitalSpecimen;
 import jakarta.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -29,8 +34,21 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
   private final ObjectMapper mapper;
   private final Configuration jsonPathConfig;
   private final JsonSchemaValidator jsonSchemaValidator;
-  private static final Pattern LAST_INDEX_PATTERN = Pattern.compile("\\[(?!.*\\[)(\\d+)]");
-  private static final Pattern LAST_KEY_PATTERN = Pattern.compile("\\[(?!.*\\[[\"'])(.*)[\"']]");
+
+  private static final Pattern KEY_PATTERN = Pattern.compile("\\['([^\"']+)[\"']");
+  private static final Pattern LAST_KEY_OR_INDEX_PATTERN = Pattern.compile(
+      "\\[(?:'([A-Za-z:]+)'|\\d+)]$");
+
+  private static final Pattern ARRAY_PATTERN = Pattern.compile("^.+:\\w+s$");
+  private static final Pattern ARRAY_OBJECTS_PATTERN = Pattern.compile("^.+:has\\w+s$");
+  private static final Pattern OBJECT_PATTERN = Pattern.compile("^(.+:has\\w+(?<!s))$");
+
+  private static final Pattern NUMERIC_PATTERN = Pattern.compile("\\d+");
+
+  private static final Pattern BLOCK_SEGMENT_PATTERN = Pattern.compile("'([^']+)'|\\[(\\d+|\\*)]");
+  private static final String WILDCARD_INDEX_PATTERN = "[*]";
+
+
   private static final Pattern BLOCK_NOTATION_PATTERN = Pattern.compile(
       "^\\$((?:\\[['\"][A-Za-z:]+['\"]])+(?:\\[\\d+])*+)*+");
   private static final Logger LOGGER = LoggerFactory.getLogger(AnnotationValidator.class);
@@ -112,15 +130,14 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     }
     if ((OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())
         || OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation()))) {
-      if (!pathExists(context, path)) {
+      if (!pathExists(context, path) || path.contains(WILDCARD_INDEX_PATTERN)) {
         throw new InvalidAnnotationException(
-            "Invalid path. Target path must exist for ods:editing annotation");
+            "Invalid path. Target path must exist for ods:editing and deleting annotations and may not contain wildcards.");
       }
     } else if (OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())) {
-      var parentPath = getParentPath(path);
-      if (pathExists(context, path) || !pathExists(context, parentPath)) {
+      if (!addingPathIsValid(context, path)) {
         throw new InvalidAnnotationException(
-            "Invalid path. Target path must NOT exist for ods:adding annotation, but parent path must exist. Use a class selector instead.");
+            "Invalid path. Target path must NOT exist for ods:adding annotation");
       }
     } else {
       throw new InvalidAnnotationMotivationException(
@@ -154,6 +171,23 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
     }
   }
 
+  // Verifies that paths containing explicit indexes exist. Overall path must not exist.
+  private static boolean addingPathIsValid(DocumentContext context, String path) {
+    if (pathExists(context, path) && !path.contains(WILDCARD_INDEX_PATTERN)) {
+      return false;
+    }
+    var segments = getSegments(path);
+    var currentPath = "$";
+    for (var segment : segments) {
+      currentPath = getNextPath(currentPath, segment);
+      if (NUMERIC_PATTERN.matcher(segment).find() && !pathExists(context, currentPath)
+          && !currentPath.contains(WILDCARD_INDEX_PATTERN)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private static boolean pathExists(DocumentContext context, String path) {
     return context.read(path) != null;
   }
@@ -166,90 +200,144 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
 
   private static String getParentPath(String path) {
     return path
-        .replaceAll(LAST_INDEX_PATTERN.pattern(), "")
-        .replaceAll(LAST_KEY_PATTERN.pattern(), "");
+        .replaceAll(LAST_KEY_OR_INDEX_PATTERN.pattern(), "");
   }
 
   private static String getLastKey(String jsonPath) {
-    var lastKeyMatcher = LAST_KEY_PATTERN.matcher(jsonPath);
-    lastKeyMatcher.find();
-    return lastKeyMatcher.group(1)
-        .replace("[", "")
-        .replace("]", "")
-        .replace("'", "")
-        .replace("\"", "");
+    var keyMatcher = AnnotationValidator.KEY_PATTERN.matcher(jsonPath);
+    String lastKey = "";
+    while (keyMatcher.find()) {
+      lastKey = keyMatcher.group(1);
+    }
+    return lastKey;
   }
-
 
   private String applyAnnotationToContext(DocumentContext context, Annotation annotation)
       throws InvalidAnnotationException {
     var selectorType = getSelector(annotation);
-    if (SelectorType.TERM_SELECTOR.equals(selectorType)) {
-      return applyTermAnnotation(context, annotation);
-    } else {
-      return applyClassAnnotation(context, annotation);
-    }
+    return applyAnnotation(context, annotation, SelectorType.CLASS_SELECTOR.equals(selectorType));
   }
 
-  private String applyTermAnnotation(DocumentContext context, Annotation annotation) {
-    var path = getTargetPath(annotation);
-    if (annotation.getOaMotivation().equals(OaMotivation.ODS_DELETING)) {
-      context.delete(path);
-    } else {
-      var parentPath = getParentPath(path);
-      var lastKey = getLastKey(path);
-      context.put(parentPath, lastKey, annotation.getOaHasBody().getOaValue().getFirst());
-    }
-    return context.jsonString();
-  }
-
-  private String applyClassAnnotation(DocumentContext context, Annotation annotation)
+  private String applyAnnotation(DocumentContext context, Annotation annotation,
+      boolean isClassAnnotation)
       throws InvalidAnnotationException {
     var path = getTargetPath(annotation);
-    if (annotation.getOaMotivation().equals(OaMotivation.ODS_DELETING)) {
+    if (OaMotivation.ODS_DELETING.equals(annotation.getOaMotivation())) {
       context.delete(path);
     } else {
-      var targetClass = getLastKey(path);
-      var clazz = CLASS_MAP.get(targetClass);
-      if (clazz == null) {
-        LOGGER.warn("Unrecognized class: {}", targetClass);
-        throw new InvalidAnnotationException("Unrecognized class: " + path);
-      }
-      Map<String, Object> newObjectHashMap;
-      try {
-        // Checks if the value of the annotation correctly maps to its intended class
-        var newObject = mapper.readValue(annotation.getOaHasBody().getOaValue().getFirst(), clazz);
-        newObjectHashMap = mapper.convertValue(newObject, Map.class);
-      } catch (JsonProcessingException e) {
-        LOGGER.error("Unable to read value {} as target class {}",
-            annotation.getOaHasBody().getOaValue().getFirst(), targetClass, e);
-        throw new InvalidAnnotationBodyException(
-            "Unable to read value " + annotation.getOaHasBody().getOaValue().getFirst()
-                + " as class " + targetClass);
-      }
-      if (OaMotivation.ODS_ADDING.equals(annotation.getOaMotivation())) {
-        applyClassAnnotationAdd(context, path, newObjectHashMap);
-      } else if (OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())) {
-        context.set(path, newObjectHashMap);
+      var annotationValueObject = isClassAnnotation ?
+          mapAnnotationValueToTargetClass(path, annotation) :
+          mapAnnotationValueToTargetField(path, annotation);
+      if (OaMotivation.OA_EDITING.equals(annotation.getOaMotivation())) {
+        context.set(path, annotationValueObject);
+      } else {
+        var parentPath = getParentPath(path);
+        parentPath = addParent(context, parentPath);
+        applyAddAnnotation(context, path, parentPath, annotationValueObject);
       }
     }
     return context.jsonString();
   }
 
-  private void applyClassAnnotationAdd(DocumentContext context, String path,
-      Map<String, Object> newClassValue) {
-    // If we're appending a class to the end of an array
-    if (LAST_INDEX_PATTERN.matcher(path).find()) {
-      var arrPath = path.replaceAll(LAST_INDEX_PATTERN.pattern(), ""); // remove trailing index
-      var arr = context.read(arrPath);
-      var arrayContext = using(jsonPathConfig).parse(arr);
-      arrayContext.add("$", newClassValue);
-      context.set(arrPath, arrayContext.json());
-    } else {
-      var newField = getLastKey(path);
-      var parentPath = getParentPath(path);
-      context.put(parentPath, newField, newClassValue);
+  private Map<?, ?> mapAnnotationValueToTargetClass(String path, Annotation annotation)
+      throws InvalidAnnotationException {
+    var targetClassString = getLastKey(path);
+    var targetClass = CLASS_MAP.get(targetClassString);
+    if (targetClass == null) {
+      LOGGER.warn("Unrecognized class: {}", targetClassString);
+      throw new InvalidAnnotationException("Unrecognized class: " + path);
+    }
+    try {
+      // Checks if the value of the annotation correctly maps to its intended class
+      var newObject = mapper.readValue(annotation.getOaHasBody().getOaValue().getFirst(),
+          targetClass);
+      return mapper.convertValue(newObject, Map.class);
+    } catch (JsonProcessingException e) {
+      LOGGER.error("Unable to read value {} as target class {}",
+          annotation.getOaHasBody().getOaValue().getFirst(), targetClass, e);
+      throw new InvalidAnnotationBodyException(
+          "Unable to read value " + annotation.getOaHasBody().getOaValue().getFirst()
+              + " as class " + targetClass);
     }
   }
+
+  private Object mapAnnotationValueToTargetField(String path, Annotation annotation)
+      throws InvalidAnnotationException {
+    var value = annotation.getOaHasBody().getOaValue().getFirst();
+    var key = getLastKey(path);
+    if (SPECIMEN_PRIMITIVE_ARRAYS.contains(key)) {
+      try {
+        return mapper.readValue(value, new TypeReference<List<String>>() {
+        });
+      } catch (JsonProcessingException e) {
+        LOGGER.warn("Unable to read {} as array", value, e);
+        throw new InvalidAnnotationException(
+            "Unable to read " + value + "as array for field " + key);
+      }
+    }
+    return value;
+  }
+
+  private void applyAddAnnotation(DocumentContext context, String path, String parentPath,
+      Object newValue) {
+    // If we're appending a class to the end of an array
+    if (path.endsWith(WILDCARD_INDEX_PATTERN)) {
+      context.set(parentPath, newValue);
+    } else {
+      var newField = getLastKey(path);
+      context.put(parentPath, newField, newValue);
+    }
+  }
+
+  private String addParent(DocumentContext context, String parentPath) {
+    var pathList = getSegments(parentPath);
+    var currentPath = "$";
+    for (int i = 0; i < pathList.size(); i++) {
+      var segment = pathList.get(i);
+      if ("*".equals(segment)) {
+        // If it's a wild card, select the next index in the given array
+        segment = context.read(currentPath + ".length()").toString();
+      }
+      var nextPath = getNextPath(currentPath, segment);
+      if (context.read(nextPath) == null) {
+        if (!NUMERIC_PATTERN.matcher(segment).matches()) {
+          // Add the next segment
+          addChildSegment(context, currentPath, segment);
+        } else { // We're at an index, so we add a value to an array
+          var previousSegment = pathList.get(i - 1);
+          // If it's an array of objects, we create a hashmap
+          if (ARRAY_OBJECTS_PATTERN.matcher(previousSegment).matches()) {
+            context.add(currentPath, new HashMap<>());
+          }
+        }
+      }
+      currentPath = nextPath;
+    }
+    return currentPath;
+  }
+
+  private static String getNextPath(String currentPath, String segment) {
+    return NUMERIC_PATTERN.matcher(segment).matches() ?
+        currentPath + "[" + segment + "]"
+        : currentPath + "['" + segment + "']";
+  }
+
+  private static List<String> getSegments(String path) {
+    return BLOCK_SEGMENT_PATTERN.matcher(path)
+        .results()
+        .map(m -> m.group(1) != null ? m.group(1) : m.group(2))
+        .toList();
+  }
+
+  private static void addChildSegment(DocumentContext context, String currentPath, String segment) {
+    // Case 1: Child is an array
+    if (ARRAY_PATTERN.matcher(segment).matches()) {
+      context.put(currentPath, segment, new ArrayList<>()); // Put an empty list
+    } else if (OBJECT_PATTERN.matcher(segment).matches()) {
+      // Case 2: Child is an object
+      context.put(currentPath, segment, new HashMap<>()); // Put an empty map
+    }
+  }
+
 
 }
