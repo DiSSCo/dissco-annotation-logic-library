@@ -5,8 +5,10 @@ import static io.github.dissco.annotationlogic.TestUtils.MAPPER;
 import static io.github.dissco.annotationlogic.TestUtils.MEDIA_ID;
 import static io.github.dissco.annotationlogic.TestUtils.NEW_VALUE;
 import static io.github.dissco.annotationlogic.TestUtils.SPECIMEN_ID;
+import static io.github.dissco.annotationlogic.TestUtils.givenAgent;
 import static io.github.dissco.annotationlogic.TestUtils.givenAnnotation;
-import static io.github.dissco.annotationlogic.TestUtils.givenAnnotationTarget;
+import static io.github.dissco.annotationlogic.TestUtils.givenAnnotationTargetClass;
+import static io.github.dissco.annotationlogic.TestUtils.givenAnnotationTargetTerm;
 import static io.github.dissco.annotationlogic.TestUtils.givenDigitalSpecimen;
 import static io.github.dissco.annotationlogic.TestUtils.givenEvent;
 import static io.github.dissco.annotationlogic.TestUtils.givenIdentification;
@@ -15,14 +17,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jayway.jsonpath.Option;
 import io.github.dissco.annotationlogic.exception.InvalidAnnotationException;
+import io.github.dissco.core.annotationlogic.schema.Agent.Type;
 import io.github.dissco.core.annotationlogic.schema.Annotation;
 import io.github.dissco.core.annotationlogic.schema.Annotation.OaMotivation;
 import io.github.dissco.core.annotationlogic.schema.AnnotationBody;
 import io.github.dissco.core.annotationlogic.schema.AnnotationTarget;
 import io.github.dissco.core.annotationlogic.schema.DigitalSpecimen;
+import io.github.dissco.core.annotationlogic.schema.Event;
 import io.github.dissco.core.annotationlogic.schema.GeologicalContext;
+import io.github.dissco.core.annotationlogic.schema.Georeference;
 import io.github.dissco.core.annotationlogic.schema.Identification;
 import io.github.dissco.core.annotationlogic.schema.Location;
 import io.github.dissco.core.annotationlogic.schema.OaHasSelector;
@@ -121,7 +127,7 @@ class SpecimenAnnotationValidatorTest {
     assertThat(result).isEqualTo(expected);
   }
 
-  private static Stream<Arguments> validAnnotationsAndResult() {
+  private static Stream<Arguments> validAnnotationsAndResult() throws JsonProcessingException {
     return Stream.of(
         Arguments.of(
             givenAnnotation(OaMotivation.OA_EDITING, true),
@@ -213,14 +219,14 @@ class SpecimenAnnotationValidatorTest {
             givenAnnotation(OaMotivation.ODS_ADDING, true)
                 .withOaHasBody(new AnnotationBody()
                     .withOaValue(List.of("[\"English\", \"French\"]")))
-                .withOaHasTarget(givenAnnotationTarget("$['ods:metadataLanguages']")),
+                .withOaHasTarget(givenAnnotationTargetTerm("$['ods:metadataLanguages']")),
             givenDigitalSpecimen()
                 .withOdsMetadataLanguages(List.of("English", "French"))
         ),
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_ADDING, true)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['ods:hasEvents'][0]['ods:hasLocation']['ods:hasGeologicalContext']['dwc:group']")
                 )
                 .withOaHasBody(new AnnotationBody().withOaValue(List.of(NEW_VALUE))),
@@ -229,6 +235,22 @@ class SpecimenAnnotationValidatorTest {
                     givenEvent().getOdsHasLocation()
                         .withOdsHasGeologicalContext(
                             new GeologicalContext().withDwcGroup(NEW_VALUE)))
+                ))
+        ),
+        Arguments.of(
+            givenAnnotation(OaMotivation.ODS_ADDING, false)
+                .withOaHasTarget(givenAnnotationTargetClass(OaMotivation.ODS_ADDING,
+                    "$['ods:hasEvents'][*]['ods:hasLocation']['ods:hasGeoreference']['ods:hasAgents'][*]"))
+                .withOaHasBody(new AnnotationBody().withOaValue(
+                    List.of(MAPPER.writeValueAsString(givenAgent(
+                        Type.PROV_PERSON))))),
+            givenDigitalSpecimen()
+                .withOdsHasEvents(List.of(
+                    givenEvent(),
+                    new Event()
+                        .withOdsHasLocation(new Location()
+                            .withOdsHasGeoreference(new Georeference()
+                                .withOdsHasAgents(List.of(givenAgent(Type.PROV_PERSON)))))
                 ))
         )
     );
@@ -239,14 +261,15 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation()
                 .withOaHasTarget(
-                    givenAnnotationTarget("$['ods:hasEvents'][0]['ods:hasLocation']['dwc:country']")
+                    givenAnnotationTargetTerm(
+                        "$['ods:hasEvents'][0]['ods:hasLocation']['dwc:country']")
                         .withDctermsIdentifier(MEDIA_ID)
                 )
         ),
         Arguments.of(
             givenAnnotation()
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['dwc:pathDoesNotExist']"
                     )
                 )
@@ -254,7 +277,7 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_DELETING, true)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['dwc:pathDoesNotExist']"
                     )
                 )
@@ -262,7 +285,7 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_ADDING, true)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['ods:topicDiscipline']"
                     )
                 )
@@ -270,7 +293,7 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_DELETING, true)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['dcterms:identifier']"
                     )
                 )
@@ -300,7 +323,7 @@ class SpecimenAnnotationValidatorTest {
                     """)))
         ),
         Arguments.of(givenAnnotation(OaMotivation.OA_COMMENTING, false)),
-        Arguments.of(givenAnnotation().withOaHasTarget(givenAnnotationTarget("")
+        Arguments.of(givenAnnotation().withOaHasTarget(givenAnnotationTargetTerm("")
             .withOaHasSelector(
                 new OaHasSelector().withAdditionalProperty("@type", "oa:FragmentSelector")))
         ),
@@ -308,11 +331,11 @@ class SpecimenAnnotationValidatorTest {
             givenAnnotation(OaMotivation.ODS_ADDING, true)
                 .withOaHasBody(new AnnotationBody()
                     .withOaValue(List.of("English, French")))
-                .withOaHasTarget(givenAnnotationTarget("$['ods:metadataLanguages']"))),
+                .withOaHasTarget(givenAnnotationTargetTerm("$['ods:metadataLanguages']"))),
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_ADDING, false)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['ods:hasTombstoneMetadata']"
                     )
                 )
@@ -320,7 +343,7 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_DELETING, true)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['ods:livingOrPreserved']"
                     )
                 ).withOaHasBody(new AnnotationBody().withOaValue(List.of(NEW_VALUE)))
@@ -328,7 +351,7 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_DELETING, true)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['ods:hasEvents'][*]"
                     )
                 )
@@ -336,14 +359,14 @@ class SpecimenAnnotationValidatorTest {
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_ADDING, false)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['ods:hasIdentifications'][*]['ods:hasTaxonIdentifications'][1]")
                 )
         ),
         Arguments.of(
             givenAnnotation(OaMotivation.ODS_ADDING, false)
                 .withOaHasTarget(
-                    givenAnnotationTarget(
+                    givenAnnotationTargetTerm(
                         "$['ods:hasIdentifications'][2]['ods:hasTaxonIdentifications'][*]")
                 )
         )
@@ -389,6 +412,4 @@ class SpecimenAnnotationValidatorTest {
             """
     ));
   }
-
-
 }
