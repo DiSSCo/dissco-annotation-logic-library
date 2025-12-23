@@ -35,7 +35,7 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
   private final Configuration jsonPathConfig;
   private final JsonSchemaValidator jsonSchemaValidator;
 
-  private static final Pattern KEY_PATTERN = Pattern.compile(".*\\['(.+)[\"']]");
+  private static final Pattern KEY_PATTERN = Pattern.compile("\\['([^\"']+)[\"']");
   private static final Pattern LAST_KEY_OR_INDEX_PATTERN = Pattern.compile(
       "\\[(?:'([A-Za-z:]+)'|\\d+)]$");
 
@@ -205,8 +205,11 @@ public class AnnotationValidator implements AnnotationValidatorInterface {
 
   private static String getLastKey(String jsonPath) {
     var keyMatcher = AnnotationValidator.KEY_PATTERN.matcher(jsonPath);
-    keyMatcher.find();
-    return keyMatcher.group(keyMatcher.groupCount());
+    String lastKey = "";
+    while (keyMatcher.find()) {
+      lastKey = keyMatcher.group(1);
+    }
+    return lastKey;
   }
 
   private String applyAnnotationToContext(DocumentContext context, Annotation annotation)
